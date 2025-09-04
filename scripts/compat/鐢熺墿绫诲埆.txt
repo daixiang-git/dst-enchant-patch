@@ -1,0 +1,19 @@
+生物分类索引
+文件包含多个分类索引表，用于快速查找某类生物：
+
+pig - 猪人
+rabbit - 兔人
+fish - 鱼
+gear - 发条
+spider - 蜘蛛
+dog - 犬
+frog - 蛙
+insect - 昆虫
+monkey - 猴
+shadow - 暗影
+plant - 植物
+
+4. 常见怪物分类
+common_monster - 普通怪物--common_tag
+elite_monster - 精英怪物--elite_tag
+boss_monster - 首领级怪物--boss_tag
