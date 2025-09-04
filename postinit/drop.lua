@@ -72,7 +72,7 @@ AddPrefabPostInit("world", function(inst)
             if CONFIG.ENABLE_100_DAY_REWARD then
                 local current_day = GLOBAL.TheWorld.state.cycles
 
-                if CONFIG.ENABLE_100_DAY_REWARD and current_day >= 100 then
+                if CONFIG.ENABLE_100_DAY_REWARD and current_day >= 99 then
                     for _, player in pairs(GLOBAL.AllPlayers) do
                         local userid = player.userid or "unknown"
 

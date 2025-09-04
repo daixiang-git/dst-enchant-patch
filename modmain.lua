@@ -34,4 +34,4 @@ if GLOBAL.GemWORMWOOD then
     print("部分掉落卷轴已激活")
     modimport("postinit/renwu.lua")     --配方
 end
-
+modimport("postinit/other.lua")     --其他杂项
