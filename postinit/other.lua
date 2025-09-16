@@ -27,10 +27,123 @@ if not enable_rosorns then
             hand_off(inst, owner)
         end)
     end)
+
+    local hat_on_opentop =
+        function(owner, buildname, foldername) -- 完全开放式的帽子样式
+            if buildname == nil then
+                owner.AnimState:ClearOverrideSymbol("swap_hat")
+            else
+                owner.AnimState:OverrideSymbol("swap_hat", buildname, foldername)
+            end
+            owner.AnimState:Show("HAT")
+            owner.AnimState:Hide("HAIR_HAT")
+            owner.AnimState:Show("HAIR_NOHAT")
+            owner.AnimState:Show("HAIR")
+
+            owner.AnimState:Show("HEAD")
+            owner.AnimState:Hide("HEAD_HAT")
+            owner.AnimState:Hide("HEAD_HAT_NOHELM")
+            owner.AnimState:Hide("HEAD_HAT_HELM")
+        end
+
+    local hat_off =
+        function(inst, owner) -- inst参数虽然没用，但是可以摆阵型，对齐参数
+            owner.AnimState:ClearOverrideSymbol("headbase_hat") -- it might have been overriden by _onequip
+            if owner.components.skinner ~= nil then
+                owner.components.skinner.base_change_cb =
+                    owner.old_base_change_cb
+            end
+
+            owner.AnimState:ClearOverrideSymbol("swap_hat")
+            owner.AnimState:Hide("HAT")
+            owner.AnimState:Hide("HAIR_HAT")
+            owner.AnimState:Show("HAIR_NOHAT")
+            owner.AnimState:Show("HAIR")
+
+            if owner:HasTag("player") then
+                owner.AnimState:Show("HEAD")
+                owner.AnimState:Hide("HEAD_HAT")
+                owner.AnimState:Hide("HEAD_HAT_NOHELM")
+                owner.AnimState:Hide("HEAD_HAT_HELM")
+            end
+        end
+    local DarkSet_whisperose = function(inst, phase)
+        local state
+        if phase == nil then
+            if TheWorld.state.isnight then
+                state = 2
+            elseif TheWorld.state.isdusk then
+                state = 1
+            end
+        elseif phase == "night" then
+            state = 2
+        elseif phase == "dusk" then
+            state = 1
+        end
+        local owner = inst._owner_l
+        if owner == nil then
+            return
+        elseif owner.components.combat == nil then
+            owner.legion_whisperose = nil
+            return
+        end
+        owner.legion_whisperose = state
+        if state == 2 then
+            owner.components.combat.externaldamagemultipliers:SetModifier(inst,
+                                                                          1.5)
+        elseif state == 1 then
+            owner.components.combat.externaldamagemultipliers:SetModifier(inst,
+                                                                          1.3)
+        else
+            owner.components.combat.externaldamagemultipliers:RemoveModifier(
+                inst)
+        end
+    end
+    local OnHitOther_whisperose = function(owner, data) -- 攻击时会扣血
+        local value = data.damageresolved or data.damage
+        if value ~= nil and value > 0 and owner.legiontask_cost_whisperose ==
+            nil then -- 造成了伤害才行
+            owner.legiontask_cost_whisperose =
+                owner:DoTaskInTime(0, function()
+                    owner.legiontask_cost_whisperose = nil
+                    if owner.components.health ~= nil and
+                        not owner.components.health:IsDead() then
+                        if owner:HasTag("genesis_nyx") then
+                            if owner.components.health:IsHurt() then
+                                owner.components.health:DoDelta(1, nil,
+                                                                "hat_whisperose")
+                            end
+                        else
+                            owner.components.health:DoDelta(-1, true,
+                                                            "hat_whisperose")
+                        end
+                    end
+                end)
+        end
+    end
+    AddPrefabPostInit("hat_whisperose", function(inst)
+        local equippable = inst.components.equippable
+        if equippable == nil then return end
+        equippable:SetOnEquip(function(inst, owner)
+            hat_on_opentop(owner, "hat_whisperose", "swap_hat")
+            owner.AnimState:SetSymbolLightOverride("swap_hat", 0.2)
+            if owner:HasTag("equipmentmodel") then return end -- 假人
+            inst._owner_l = owner
+            inst:WatchWorldState("phase", DarkSet_whisperose)
+            owner:ListenForEvent("onhitother", OnHitOther_whisperose)
+            DarkSet_whisperose(inst, nil)
+        end)
+        equippable:SetOnUnequip(function(inst, owner)
+            hat_off(inst, owner)
+            owner.AnimState:SetSymbolLightOverride("swap_hat", 0)
+            if owner:HasTag("equipmentmodel") then return end -- 假人
+            inst:StopWatchingWorldState("phase", DarkSet_whisperose)
+            owner:RemoveEventCallback("onhitother", OnHitOther_whisperose)
+            DarkSet_whisperose(inst, "day")
+            inst._owner_l = nil
+        end)
+    end)
 end
-
-
-
 
 local enable_start_give = GetModConfigData("enable_start_give")
 

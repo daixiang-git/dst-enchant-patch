@@ -7,6 +7,7 @@ GLOBAL.BenyuanXZEnabled = GetModConfigData("ENABLE_BENYUAN_XZ") or false
 GLOBAL.DropReelEnabled = GetModConfigData("ENABLE_DROP_SYSTEM") or false
 GLOBAL.GemEnabled = GetModConfigData("ENABLE_GEM") or false
 GLOBAL.GemWORMWOOD = GetModConfigData("ENABLE_WORMWOOD") or false
+GLOBAL.enable_new_effect = GetModConfigData("enable_new_effect") or false
 
 
 if GLOBAL.UnknownTagEnabled then
@@ -34,4 +35,10 @@ if GLOBAL.GemWORMWOOD then
     print("部分掉落卷轴已激活")
     modimport("postinit/renwu.lua")     --配方
 end
+
+if GLOBAL.enable_new_effect then
+    print("添加新附魔石已激活")
+    modimport("postinit/addNewEffect.lua")     --配方
+end
+
 modimport("postinit/other.lua")     --其他杂项

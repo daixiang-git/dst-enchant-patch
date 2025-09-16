@@ -1,7 +1,7 @@
 name = "老斑鸠自用兼容补丁"
 description = "自用，侵权联系删除"
 author = "老斑鸠"
-version = "0.23"
+version = "0.25"
 
 api_version = 10
 dst_compatible = true
@@ -241,8 +241,8 @@ configuration_options = {
         default = true
     }, {
         name = "enable_rosorns",
-        label = "开启棱镜蔷薇剑真实伤害",
-        hover = "开启棱镜蔷薇剑真实伤害",
+        label = "开启棱镜蔷薇剑、夜雨玫瑰真实伤害",
+        hover = "开启棱镜蔷薇剑、夜雨玫瑰真实伤害",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}
@@ -269,5 +269,14 @@ configuration_options = {
             {description = "90", data = 90}, {description = "100", data = 100}
         },
         default = 20
+    }, {
+        name = "enable_new_effect",
+        label = "开启新附魔石头（极品穿刺、暴击效果、伤害加成）",
+        hover = "开启新附魔石头（极品穿刺、暴击效果、伤害加成）",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
     }
 }
