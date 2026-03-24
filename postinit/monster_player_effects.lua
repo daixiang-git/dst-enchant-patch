@@ -1,0 +1,461 @@
+----
+--- 怪物玩家词条扩展
+--- 让怪物能随机获得部分玩家装备专属的附魔词条
+--- 通过 AddComponentPostInit 钩子注入，不修改本体
+----
+
+-- ============================================================
+-- 新增的 effect key 列表（玩家有但怪物原本没有的，适合怪物的）
+-- ============================================================
+local NEW_EFFECT_KEYS = {
+    "trueDamageNum",                -- 真实伤害（穿刺）
+    "bloodOutburst",                -- 血涌（血量越低伤害越高）
+    "moreDamage20To200",            -- 20%概率双倍伤害
+    "moreDamage10To300",            -- 10%概率三倍伤害
+    "moreDamage8To500",             -- 8%概率五倍伤害
+    "reflexiveInjury",              -- 固定反伤
+    "reflexiveInjuryByPercent",     -- 百分比反伤
+    "targetPercentDamage",          -- 末世（目标当前血量百分比伤害）
+    "immunePoison",                 -- 免疫中毒
+}
+
+-- ============================================================
+-- 新增的怪物词条定义（按等级分类，仿照 enums/hh_monster.lua 格式）
+-- 这些词条可以被 AddBuffByName() 随机抽中
+-- ============================================================
+local NEW_MONSTER_BUFFS = {
+    -- ==================== 普通怪 ====================
+    common_monster = {
+        patch_trueDamage = {
+            name = "真实伤害+%s",
+            only_one = true,
+            rangeValue = { min = 5, max = 15 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("trueDamageNum", value)
+                end
+            end,
+        },
+        patch_bloodOutburst = {
+            name = "血涌(血量越低伤害越高)",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("bloodOutburst", 1)
+                end
+            end,
+        },
+        patch_moreDamage20 = {
+            name = "20%%概率双倍伤害",
+            only_one = true,
+            rangeValue = { min = 100, max = 200 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage20To200", value)
+                end
+            end,
+        },
+        patch_moreDamage10 = {
+            name = "10%%概率三倍伤害",
+            only_one = true,
+            rangeValue = { min = 150, max = 300 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage10To300", value)
+                end
+            end,
+        },
+        patch_moreDamage8 = {
+            name = "8%%概率五倍伤害",
+            only_one = true,
+            rangeValue = { min = 200, max = 400 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage8To500", value)
+                end
+            end,
+        },
+        patch_reflexiveInjury = {
+            name = "固定反伤+%s",
+            only_one = true,
+            rangeValue = { min = 5, max = 15 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("reflexiveInjury", value)
+                end
+            end,
+        },
+        patch_reflexivePercent = {
+            name = "百分比反伤%s%%",
+            only_one = true,
+            rangeValue = { min = 3, max = 8 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("reflexiveInjuryByPercent", value)
+                end
+            end,
+        },
+        patch_targetPercent = {
+            name = "末世(目标当前血量%s%%真伤)",
+            only_one = true,
+            rangeValue = { min = 1, max = 2 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("targetPercentDamage", value)
+                end
+            end,
+        },
+        patch_immunePoison = {
+            name = "免疫中毒",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("immunePoison", 1)
+                end
+            end,
+        },
+    },
+    -- ==================== 精英怪 ====================
+    elite_monster = {
+        patch_trueDamage = {
+            name = "真实伤害+%s",
+            only_one = true,
+            rangeValue = { min = 15, max = 40 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("trueDamageNum", value)
+                end
+            end,
+        },
+        patch_bloodOutburst = {
+            name = "血涌(血量越低伤害越高)",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("bloodOutburst", 1)
+                end
+            end,
+        },
+        patch_moreDamage20 = {
+            name = "20%%概率双倍伤害",
+            only_one = true,
+            rangeValue = { min = 150, max = 300 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage20To200", value)
+                end
+            end,
+        },
+        patch_moreDamage10 = {
+            name = "10%%概率三倍伤害",
+            only_one = true,
+            rangeValue = { min = 200, max = 400 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage10To300", value)
+                end
+            end,
+        },
+        patch_moreDamage8 = {
+            name = "8%%概率五倍伤害",
+            only_one = true,
+            rangeValue = { min = 300, max = 500 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage8To500", value)
+                end
+            end,
+        },
+        patch_reflexiveInjury = {
+            name = "固定反伤+%s",
+            only_one = true,
+            rangeValue = { min = 10, max = 30 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("reflexiveInjury", value)
+                end
+            end,
+        },
+        patch_reflexivePercent = {
+            name = "百分比反伤%s%%",
+            only_one = true,
+            rangeValue = { min = 4, max = 10 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("reflexiveInjuryByPercent", value)
+                end
+            end,
+        },
+        patch_targetPercent = {
+            name = "末世(目标当前血量%s%%真伤)",
+            only_one = true,
+            rangeValue = { min = 1, max = 3 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("targetPercentDamage", value)
+                end
+            end,
+        },
+        patch_immunePoison = {
+            name = "免疫中毒",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("immunePoison", 1)
+                end
+            end,
+        },
+    },
+    -- ==================== Boss ====================
+    boss_monster = {
+        patch_trueDamage = {
+            name = "真实伤害+%s",
+            only_one = true,
+            rangeValue = { min = 30, max = 80 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("trueDamageNum", value)
+                end
+            end,
+        },
+        patch_bloodOutburst = {
+            name = "血涌(血量越低伤害越高)",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("bloodOutburst", 1)
+                end
+            end,
+        },
+        patch_moreDamage20 = {
+            name = "20%%概率双倍伤害",
+            only_one = true,
+            rangeValue = { min = 200, max = 400 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage20To200", value)
+                end
+            end,
+        },
+        patch_moreDamage10 = {
+            name = "10%%概率三倍伤害",
+            only_one = true,
+            rangeValue = { min = 300, max = 500 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage10To300", value)
+                end
+            end,
+        },
+        patch_moreDamage8 = {
+            name = "8%%概率五倍伤害",
+            only_one = true,
+            rangeValue = { min = 400, max = 600 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("moreDamage8To500", value)
+                end
+            end,
+        },
+        patch_reflexiveInjury = {
+            name = "固定反伤+%s",
+            only_one = true,
+            rangeValue = { min = 20, max = 60 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("reflexiveInjury", value)
+                end
+            end,
+        },
+        patch_reflexivePercent = {
+            name = "百分比反伤%s%%",
+            only_one = true,
+            rangeValue = { min = 5, max = 15 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("reflexiveInjuryByPercent", value)
+                end
+            end,
+        },
+        patch_targetPercent = {
+            name = "末世(目标当前血量%s%%真伤)",
+            only_one = true,
+            rangeValue = { min = 2, max = 5 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("targetPercentDamage", value)
+                end
+            end,
+        },
+        patch_immunePoison = {
+            name = "免疫中毒",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("immunePoison", 1)
+                end
+            end,
+        },
+    },
+}
+
+-- ============================================================
+-- Hook hh_monster 组件：注入新 effect keys + 包装战斗方法
+-- ============================================================
+AddComponentPostInit("hh_monster", function(self, inst)
+    -- 1. 注入新 effect key 到 hh_effects 表（初始值 0）
+    if self.hh_effects then
+        for _, key in ipairs(NEW_EFFECT_KEYS) do
+            if self.hh_effects[key] == nil then
+                self.hh_effects[key] = 0
+            end
+        end
+    end
+
+    -- 2. 包装 DoAttackDamage —— 追加新效果的伤害计算
+    local _orig_DoAttackDamage = self.DoAttackDamage
+    self.DoAttackDamage = function(self, monster, target, amount)
+        -- 先执行原始逻辑
+        amount = _orig_DoAttackDamage(self, monster, target, amount)
+
+        if not target or not target:IsValid() then
+            return amount
+        end
+
+        -- 血涌：血量越低伤害越高（最高加成50%）
+        local bloodOutburst = self:GetEffectValueByKey("bloodOutburst")
+        if bloodOutburst > 0 and monster.components.health and not monster.components.health:IsDead() then
+            local hp_percent = monster.components.health:GetPercent()
+            if hp_percent >= 0 then
+                local bonus_percent = (1 - hp_percent) * 0.5  -- 最高50%加成
+                amount = amount * (1 + bonus_percent)
+            end
+        end
+
+        -- 20%概率双倍伤害
+        local moreDmg20 = self:GetEffectValueByKey("moreDamage20To200")
+        if moreDmg20 > 0 then
+            if math.random() <= 0.2 then
+                amount = amount * math.max(moreDmg20 / 100, 1)
+            end
+        end
+
+        -- 10%概率三倍伤害
+        local moreDmg10 = self:GetEffectValueByKey("moreDamage10To300")
+        if moreDmg10 > 0 then
+            if math.random() <= 0.1 then
+                amount = amount * math.max(moreDmg10 / 100, 1)
+            end
+        end
+
+        -- 8%概率五倍伤害
+        local moreDmg8 = self:GetEffectValueByKey("moreDamage8To500")
+        if moreDmg8 > 0 then
+            if math.random() <= 0.08 then
+                amount = amount * math.max(moreDmg8 / 100, 1)
+            end
+        end
+
+        -- 真实伤害（穿刺）—— 在主伤害之外额外造成真实伤害
+        local trueDmg = self:GetEffectValueByKey("trueDamageNum")
+        if trueDmg > 0 and target.components.health and target.components.health.DoHHDelta then
+            target.components.health:DoHHDelta(-trueDmg, monster, "穿刺")
+        end
+
+        -- 末世：按目标当前血量百分比造成真实伤害
+        local targetPctDmg = self:GetEffectValueByKey("targetPercentDamage")
+        if targetPctDmg > 0 and target.components.health and not target.components.health:IsDead() then
+            local target_current_hp = target.components.health.currenthealth or 0
+            local pct_damage = target_current_hp * targetPctDmg / 100
+            if pct_damage > 0 and target.components.health.DoHHDelta then
+                target.components.health:DoHHDelta(-pct_damage, monster, "末世")
+            end
+        end
+
+        return amount
+    end
+
+    -- 3. 包装 GetBlockDamage —— 追加反伤效果
+    local _orig_GetBlockDamage = self.GetBlockDamage
+    self.GetBlockDamage = function(self, player, attacker, amount)
+        -- 先执行原始逻辑
+        amount = _orig_GetBlockDamage(self, player, attacker, amount)
+
+        if not attacker or not attacker:IsValid() then
+            return amount
+        end
+
+        -- 固定反伤
+        local refInjury = self:GetEffectValueByKey("reflexiveInjury")
+        if refInjury > 0 and attacker.components.combat and attacker.components.combat.GetBrambleFx then
+            attacker.components.combat:GetBrambleFx(self.inst, refInjury)
+        end
+
+        -- 百分比反伤
+        local refPercent = self:GetEffectValueByKey("reflexiveInjuryByPercent")
+        if refPercent > 0 and amount > 0 and attacker.components.combat and attacker.components.combat.GetBrambleFx then
+            local reflect_dmg = amount * refPercent / 100
+            if reflect_dmg > 0 then
+                attacker.components.combat:GetBrambleFx(self.inst, reflect_dmg)
+            end
+        end
+
+        return amount
+    end
+end)
+
+-- ============================================================
+-- 注入新词条到怪物词条池
+-- 通过 require hh_monster 枚举表，合并新词条
+-- ============================================================
+local function InjectNewBuffs()
+    -- 尝试获取本体的怪物词条配置表
+    local success, hh_monster_enum = pcall(require, "enums/hh_monster")
+    if not success or type(hh_monster_enum) ~= "table" then
+        print("[附魔补丁] 无法加载 enums/hh_monster，跳过怪物词条注入")
+        return
+    end
+
+    -- hh_monster_enum 的结构是按怪物类型分组的表
+    -- 遍历我们的新词条配置，合并到对应的怪物类型中
+    for monster_type, buffs in pairs(NEW_MONSTER_BUFFS) do
+        if hh_monster_enum[monster_type] and type(hh_monster_enum[monster_type]) == "table" then
+            for buff_name, buff_data in pairs(buffs) do
+                if not hh_monster_enum[monster_type][buff_name] then
+                    hh_monster_enum[monster_type][buff_name] = buff_data
+                end
+            end
+        end
+    end
+
+    print("[附魔补丁] 怪物玩家词条注入完成")
+end
+
+-- 执行注入
+InjectNewBuffs()
+
+-- ============================================================
+-- Hook 中毒免疫：如果怪物有 immunePoison 效果，阻止中毒 buff
+-- ============================================================
+AddComponentPostInit("hh_buff", function(self, inst)
+    local _orig_AddBuff = self.AddBuff
+    if _orig_AddBuff then
+        self.AddBuff = function(self, buff_name, ...)
+            -- 如果是中毒 buff，检查怪物是否有免疫
+            if buff_name == "poison" and inst.components.hh_monster then
+                if inst.components.hh_monster:HasSpecialEffect("immunePoison") then
+                    return  -- 免疫中毒，不添加
+                end
+            end
+            return _orig_AddBuff(self, buff_name, ...)
+        end
+    end
+end)
+
+print("[附魔补丁] 怪物玩家词条扩展模块已加载")

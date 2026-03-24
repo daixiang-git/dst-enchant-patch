@@ -2,6 +2,30 @@ GLOBAL.setmetatable(env, { __index = function(t, k) return GLOBAL.rawget(GLOBAL,
 
 -- 读取配置
 GLOBAL.UnknownTagEnabled = GetModConfigData("ENABLE_UNKNOWN_TAG") or false
+GLOBAL.EnableMonsterEffectLimit = GetModConfigData("enable_monster_effect_limit") or false
+GLOBAL.EnableDropRateConfig = GetModConfigData("enable_drop_rate_config") or false
+GLOBAL.EnableStoneConvertConfig = GetModConfigData("enable_stone_convert_config") or false
+GLOBAL.EnableLuckyCounter = GetModConfigData("enable_lucky_counter") or false
+
+-- 怪物词条数量上限修改（需要在附魔mod加载后执行）
+if GLOBAL.UnknownTagEnabled and GLOBAL.EnableMonsterEffectLimit then
+    modimport("postinit/monster_effect_limit.lua")
+end
+
+-- 精英/Boss装备掉率修改
+if GLOBAL.UnknownTagEnabled and GLOBAL.EnableDropRateConfig then
+    modimport("postinit/drop_rate_config.lua")
+end
+
+-- 水晶小人转换概率修改
+if GLOBAL.UnknownTagEnabled and GLOBAL.EnableStoneConvertConfig then
+    modimport("postinit/stone_convert_config.lua")
+end
+
+-- 累计保底系统
+if GLOBAL.UnknownTagEnabled and GLOBAL.EnableLuckyCounter then
+    modimport("postinit/lucky_counter.lua")
+end
 GLOBAL.RangedWeaponsEnabled = GetModConfigData("ENABLE_RANGED_WEAPONS") or false
 GLOBAL.BenyuanXZEnabled = GetModConfigData("ENABLE_BENYUAN_XZ") or false
 GLOBAL.DropReelEnabled = GetModConfigData("ENABLE_DROP_SYSTEM") or false
@@ -41,4 +65,26 @@ if GLOBAL.enable_new_effect then
     modimport("postinit/addNewEffect.lua")     --配方
 end
 
+GLOBAL.MonsterPlayerEffectsEnabled = GetModConfigData("enable_monster_player_effects") or false
+if GLOBAL.MonsterPlayerEffectsEnabled then
+    print("怪物玩家词条扩展已激活")
+    modimport("postinit/monster_player_effects.lua")
+end
+
+GLOBAL.RemovePlayerEffectsEnabled = GetModConfigData("remove_player_effects") or false
+if GLOBAL.RemovePlayerEffectsEnabled then
+    print("移除部分玩家词条已激活")
+    modimport("postinit/remove_player_effects.lua")
+end
+
+if GLOBAL.UnknownTagEnabled then
+    modimport("postinit/suppress_effect.lua")
+    modimport("postinit/effect_caps.lua")
+end
+
 modimport("postinit/other.lua")     --其他杂项
+
+-- 更新日志注入到本体mod界面
+if GLOBAL.UnknownTagEnabled then
+    modimport("postinit/update_log.lua")
+end

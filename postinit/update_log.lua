@@ -1,0 +1,63 @@
+-- 补丁mod更新日志注入
+-- 在本体mod的更新日志界面显示补丁mod的更新记录
+
+local function AddPatchUpdateLog()
+    -- 确保本体mod的更新日志表存在
+    if not TUNING then return end
+    if not TUNING.HH_UI_TEXT then return end
+    if not TUNING.HH_UI_TEXT.UPDATE_VISION then return end
+
+    -- 补丁mod的更新记录
+    local patchLogs = {
+        {
+            ["title"] = "补丁mod - 2026-03-24",
+            ["desc"] = [[
+            --------新增功能--------
+            【水晶小人转换概率配置】
+              可自定义稀有/超稀有词条概率
+
+            【累计保底系统】
+              转换水晶小人、击杀精英怪、击杀Boss独立计数
+              达到阈值必定获得稀有词条并全服通告
+              计数是10的倍数时全服通告进度
+              仅玩家或玩家召唤物击杀才计入保底计数
+
+            【掉率配置】
+              可自定义精英/Boss的极品附魔石、装备包裹掉率
+              帮助页概率表会同步显示配置后的实际数值
+
+            【怪物词条数量配置】
+              可自定义各类怪物词条上限、基础数量、天数增长间隔
+
+            【怪物玩家词条扩展】
+              怪物可随机获得：真实伤害、血涌、概率暴击、反伤、末世、免疫中毒
+
+            【移除词条】
+              可禁用：暗影伪装、月灵伪装、免疫制裁(套装)
+
+            --------调整--------
+            【制裁效果】
+              治疗压制从-90%改为-100%
+              制裁buff持续时间翻倍
+              相关帮助/词条文案同步调整
+
+            【玩家词条上限调整】
+              暗影护盾上限调整为30%
+              伤害减免上限调整为50%
+              秋季战神仅按1条词条生效
+              白天/黄昏/夜晚增伤各自上限调整为100
+            ]]
+        },
+    }
+
+    -- 在数组开头插入补丁mod的更新记录
+    for i = #patchLogs, 1, -1 do
+        table.insert(TUNING.HH_UI_TEXT.UPDATE_VISION, 1, patchLogs[i])
+    end
+end
+
+-- 延迟执行，确保本体mod已加载
+AddSimPostInit(function()
+    -- 使用延迟确保TUNING已初始化
+    AddPatchUpdateLog()
+end)

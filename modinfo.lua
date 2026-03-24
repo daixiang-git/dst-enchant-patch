@@ -1,7 +1,15 @@
 name = "老斑鸠自用兼容补丁"
-description = "自用，侵权联系删除"
+description = [[自用，侵权联系删除
+
+【更新日志】
+v0.26 (2026-03-23)
+- 新增水晶小人转换概率配置（稀有/超稀有词条概率可自定义）
+- 新增累计保底系统：转换水晶小人、击杀精英怪、击杀Boss独立计数
+- 新增保底阈值配置：三种行为可设置不同的保底次数
+- 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
+]]
 author = "老斑鸠"
-version = "0.25"
+version = "0.26"
 
 api_version = 10
 dst_compatible = true
@@ -278,5 +286,314 @@ configuration_options = {
             {description = "关闭", data = false}
         },
         default = true
+    }, {
+        name = "enable_monster_player_effects",
+        label = "怪物玩家词条（真伤/暴击/反伤/末世/血涌）",
+        hover = "让怪物随机获得玩家专属词条，使怪物更加强大",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "remove_player_effects",
+        label = "移除部分玩家词条（免疫制裁、暗影伪装）",
+        hover = "开启后，玩家将无法获得免疫制裁和暗影伪装词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = false
+    }, {
+        name = "enable_monster_effect_limit",
+        label = "修改怪物词条数量上限",
+        hover = "开启后，可自定义不同级别怪物的词条数量上限",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = false
+    }, {
+        name = "common_monster_effect_limit",
+        label = "普通怪物词条上限",
+        hover = "普通怪物最多拥有的词条数量",
+        options = {
+            {description = "3", data = 3}, {description = "4", data = 4},
+            {description = "5", data = 5}, {description = "6", data = 6},
+            {description = "7", data = 7}, {description = "8", data = 8},
+            {description = "9", data = 9}, {description = "10", data = 10},
+            {description = "12", data = 12}, {description = "15", data = 15},
+            {description = "20", data = 20}
+        },
+        default = 5
+    }, {
+        name = "elite_monster_effect_limit",
+        label = "精英怪物词条上限",
+        hover = "精英怪物最多拥有的词条数量",
+        options = {
+            {description = "5", data = 5}, {description = "6", data = 6},
+            {description = "7", data = 7}, {description = "8", data = 8},
+            {description = "9", data = 9}, {description = "10", data = 10},
+            {description = "12", data = 12}, {description = "15", data = 15},
+            {description = "18", data = 18}, {description = "20", data = 20},
+            {description = "25", data = 25}
+        },
+        default = 7
+    }, {
+        name = "boss_monster_effect_limit",
+        label = "Boss怪物词条上限",
+        hover = "Boss怪物最多拥有的词条数量",
+        options = {
+            {description = "8", data = 8}, {description = "10", data = 10},
+            {description = "12", data = 12}, {description = "15", data = 15},
+            {description = "18", data = 18}, {description = "20", data = 20},
+            {description = "25", data = 25}, {description = "30", data = 30},
+            {description = "35", data = 35}, {description = "40", data = 40}
+        },
+        default = 10
+    }, {
+        name = "common_base_effect_num",
+        label = "普通怪物基础词条数量",
+        hover = "普通怪物的初始词条数量（随天数增加会更多）",
+        options = {
+            {description = "1", data = 1}, {description = "2", data = 2},
+            {description = "3(默认)", data = 3}, {description = "4", data = 4},
+            {description = "5", data = 5}, {description = "6", data = 6},
+            {description = "7", data = 7}, {description = "8", data = 8},
+            {description = "9", data = 9}, {description = "10", data = 10},
+            {description = "11", data = 11}, {description = "12", data = 12},
+            {description = "13", data = 13}, {description = "14", data = 14},
+            {description = "15", data = 15}
+        },
+        default = 3
+    }, {
+        name = "elite_base_effect_num",
+        label = "精英怪物基础词条数量",
+        hover = "精英怪物的初始词条数量（随天数增加会更多）",
+        options = {
+            {description = "1", data = 1}, {description = "2", data = 2},
+            {description = "3", data = 3}, {description = "4", data = 4},
+            {description = "5(默认)", data = 5}, {description = "6", data = 6},
+            {description = "7", data = 7}, {description = "8", data = 8},
+            {description = "9", data = 9}, {description = "10", data = 10},
+            {description = "11", data = 11}, {description = "12", data = 12},
+            {description = "13", data = 13}, {description = "14", data = 14},
+            {description = "15", data = 15}
+        },
+        default = 5
+    }, {
+        name = "boss_base_effect_num",
+        label = "Boss怪物基础词条数量",
+        hover = "Boss怪物的初始词条数量（随天数增加会更多）",
+        options = {
+            {description = "1", data = 1}, {description = "2", data = 2},
+            {description = "3", data = 3}, {description = "4", data = 4},
+            {description = "5", data = 5}, {description = "6", data = 6},
+            {description = "7", data = 7}, {description = "8", data = 8},
+            {description = "9", data = 9}, {description = "10(默认)", data = 10},
+            {description = "11", data = 11}, {description = "12", data = 12},
+            {description = "13", data = 13}, {description = "14", data = 14},
+            {description = "15", data = 15}
+        },
+        default = 10
+    }, {
+        name = "effect_add_days",
+        label = "词条增加天数间隔",
+        hover = "每隔多少天怪物额外获得1个词条",
+        options = {
+            {description = "3天", data = 3},
+            {description = "4天", data = 4},
+            {description = "5天", data = 5},
+            {description = "6天", data = 6},
+            {description = "8天", data = 8},
+            {description = "10天", data = 10},
+            {description = "12天(默认)", data = 12},
+            {description = "15天", data = 15},
+            {description = "18天", data = 18},
+            {description = "20天", data = 20},
+            {description = "24天", data = 24},
+            {description = "30天", data = 30},
+            {description = "40天", data = 40},
+            {description = "50天", data = 50},
+            {description = "60天", data = 60}
+        },
+        default = 12
+    }, {
+        name = "enable_drop_rate_config",
+        label = "修改极品附魔石/包裹掉率",
+        hover = "开启后，可自定义精英怪和Boss的极品附魔石、装备包裹掉落概率",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = false
+    }, {
+        name = "elite_stone_drop_rate",
+        label = "精英极品附魔石掉率",
+        hover = "精英怪死亡时掉落极品附魔石的概率",
+        options = {
+            {description = "0.1%", data = 0.001},
+            {description = "0.2%", data = 0.002},
+            {description = "0.3%", data = 0.003},
+            {description = "0.5%", data = 0.005},
+            {description = "1%", data = 0.01},
+            {description = "2%", data = 0.02},
+            {description = "3%", data = 0.03},
+            {description = "4%", data = 0.04},
+            {description = "5%(默认)", data = 0.05}
+        },
+        default = 0.05
+    }, {
+        name = "elite_gif_drop_rate",
+        label = "精英装备包裹掉率",
+        hover = "精英怪死亡时掉落装备包裹的概率",
+        options = {
+            {description = "0.1%", data = 0.001},
+            {description = "0.2%", data = 0.002},
+            {description = "0.3%", data = 0.003},
+            {description = "0.5%", data = 0.005},
+            {description = "1%(默认)", data = 0.01}
+        },
+        default = 0.01
+    }, {
+        name = "boss_stone_drop_rate",
+        label = "Boss极品附魔石掉率",
+        hover = "Boss死亡时掉落极品附魔石的概率",
+        options = {
+            {description = "0.1%", data = 0.001},
+            {description = "0.2%", data = 0.002},
+            {description = "0.3%", data = 0.003},
+            {description = "0.5%", data = 0.005},
+            {description = "1%", data = 0.01},
+            {description = "2%", data = 0.02},
+            {description = "3%", data = 0.03},
+            {description = "4%", data = 0.04},
+            {description = "5%", data = 0.05},
+            {description = "10%", data = 0.1},
+            {description = "15%", data = 0.15},
+            {description = "20%(默认)", data = 0.2}
+        },
+        default = 0.2
+    }, {
+        name = "boss_gif_drop_rate",
+        label = "Boss装备包裹掉率",
+        hover = "Boss死亡时掉落装备包裹的概率",
+        options = {
+            {description = "0.1%", data = 0.001},
+            {description = "0.2%", data = 0.002},
+            {description = "0.3%", data = 0.003},
+            {description = "0.5%", data = 0.005},
+            {description = "1%", data = 0.01},
+            {description = "2%", data = 0.02},
+            {description = "3%(默认)", data = 0.03}
+        },
+        default = 0.03
+    }, {
+        name = "enable_stone_convert_config",
+        label = "修改水晶小人转换概率",
+        hover = "开启后，可自定义水晶小人转换附魔石的概率",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = false
+    }, {
+        name = "stone_convert_rare_rate",
+        label = "转换稀有词条概率",
+        hover = "水晶小人转换附魔石获得稀有词条的概率",
+        options = {
+            {description = "0.1%", data = 0.001},
+            {description = "0.2%", data = 0.002},
+            {description = "0.3%", data = 0.003},
+            {description = "0.5%", data = 0.005},
+            {description = "1%", data = 0.01},
+            {description = "2%", data = 0.02},
+            {description = "3%", data = 0.03},
+            {description = "4%", data = 0.04},
+            {description = "5%(默认)", data = 0.05},
+            {description = "10%", data = 0.1},
+            {description = "15%", data = 0.15},
+            {description = "20%", data = 0.2},
+            {description = "25%", data = 0.25},
+            {description = "30%", data = 0.3},
+            {description = "40%", data = 0.4},
+            {description = "50%", data = 0.5}
+        },
+        default = 0.05
+    }, {
+        name = "stone_convert_super_rare_rate",
+        label = "转换超稀有词条概率",
+        hover = "水晶小人转换附魔石获得超级稀有词条的概率",
+        options = {
+            {description = "0.1%", data = 0.001},
+            {description = "0.2%", data = 0.002},
+            {description = "0.3%", data = 0.003},
+            {description = "0.5%", data = 0.005},
+            {description = "1%(默认)", data = 0.01},
+            {description = "2%", data = 0.02},
+            {description = "3%", data = 0.03},
+            {description = "4%", data = 0.04},
+            {description = "5%", data = 0.05},
+            {description = "10%", data = 0.1},
+            {description = "15%", data = 0.15},
+            {description = "20%", data = 0.2},
+            {description = "25%", data = 0.25},
+            {description = "30%", data = 0.3}
+        },
+        default = 0.01
+    }, {
+        name = "enable_lucky_counter",
+        label = "开启累计保底系统",
+        hover = "开启后，转换水晶小人、击杀精英怪/Boss会累计计数，达到阈值必定获得稀有词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = false
+    }, {
+        name = "stone_convert_threshold",
+        label = "水晶小人转换保底阈值",
+        hover = "转换水晶小人累计多少次后必定获得稀有词条",
+        options = {
+            {description = "5次", data = 5},
+            {description = "10次", data = 10},
+            {description = "15次", data = 15},
+            {description = "20次(默认)", data = 20},
+            {description = "25次", data = 25},
+            {description = "30次", data = 30},
+            {description = "40次", data = 40},
+            {description = "50次", data = 50}
+        },
+        default = 20
+    }, {
+        name = "elite_kill_threshold",
+        label = "精英怪击杀保底阈值",
+        hover = "击杀精英怪累计多少次后必定获得稀有词条",
+        options = {
+            {description = "5次", data = 5},
+            {description = "10次", data = 10},
+            {description = "15次", data = 15},
+            {description = "20次(默认)", data = 20},
+            {description = "25次", data = 25},
+            {description = "30次", data = 30},
+            {description = "40次", data = 40},
+            {description = "50次", data = 50}
+        },
+        default = 20
+    }, {
+        name = "boss_kill_threshold",
+        label = "Boss击杀保底阈值",
+        hover = "击杀Boss累计多少次后必定获得稀有词条",
+        options = {
+            {description = "3次", data = 3},
+            {description = "5次", data = 5},
+            {description = "7次", data = 7},
+            {description = "10次(默认)", data = 10},
+            {description = "12次", data = 12},
+            {description = "15次", data = 15},
+            {description = "20次", data = 20},
+            {description = "25次", data = 25}
+        },
+        default = 10
     }
 }
