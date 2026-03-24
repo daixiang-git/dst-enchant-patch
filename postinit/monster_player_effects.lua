@@ -7,6 +7,10 @@
 -- ============================================================
 -- 新增的 effect key 列表（玩家有但怪物原本没有的，适合怪物的）
 -- ============================================================
+local BREAK_EQUIP_ENABLED = GetModConfigData("enable_monster_break_equip_effect") ~= false
+local BREAK_EQUIP_RANGE_MODE = GetModConfigData("monster_break_equip_effect_range") or "1_3"
+local BREAK_EQUIP_MAX = BREAK_EQUIP_RANGE_MODE == "1_5" and 5 or 3
+
 local NEW_EFFECT_KEYS = {
     "trueDamageNum",                -- 真实伤害（穿刺）
     "bloodOutburst",                -- 血涌（血量越低伤害越高）
@@ -17,6 +21,7 @@ local NEW_EFFECT_KEYS = {
     "reflexiveInjuryByPercent",     -- 百分比反伤
     "targetPercentDamage",          -- 末世（目标当前血量百分比伤害）
     "immunePoison",                 -- 免疫中毒
+    "breakEquipOnHitChance",        -- 命中概率分解头部/身体装备
 }
 
 -- ============================================================
@@ -305,6 +310,102 @@ local NEW_MONSTER_BUFFS = {
     },
 }
 
+if BREAK_EQUIP_ENABLED then
+    local break_equip_buff = {
+        name = "%s%%概率分解头/衣",
+        only_one = true,
+        rangeValue = { min = 1, max = BREAK_EQUIP_MAX },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("breakEquipOnHitChance", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.elite_monster.patch_breakEquip = break_equip_buff
+    NEW_MONSTER_BUFFS.boss_monster.patch_breakEquip = break_equip_buff
+end
+
+local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
+
+local function HasComponents(inst, ...)
+    if not inst or not inst.components then
+        return false
+    end
+    for i = 1, select("#", ...) do
+        local name = select(i, ...)
+        if inst.components[name] == nil then
+            return false
+        end
+    end
+    return true
+end
+
+local function GetDisplayName(inst)
+    if not inst then
+        return "未知目标"
+    end
+    return inst.name or (STRINGS.NAMES and STRINGS.NAMES[string.upper(inst.prefab or "")]) or inst.prefab or "未知目标"
+end
+
+local function GetMonsterTitle(inst)
+    if inst and inst:HasTag("boss_monster") then
+        return "BOSS"
+    end
+    if inst and inst:HasTag("elite_monster") then
+        return "精英"
+    end
+    return "怪物"
+end
+
+local function GetSlotLabel(slot)
+    if slot == EQUIPSLOTS.HEAD then
+        return "头部"
+    end
+    if slot == EQUIPSLOTS.BODY then
+        return "身体"
+    end
+    return "装备"
+end
+
+local function GetBreakableEquip(player)
+    if not HasComponents(player, "inventory") then
+        return nil, nil
+    end
+
+    local candidates = {}
+    local head = player.components.inventory:GetEquippedItem(EQUIPSLOTS.HEAD)
+    local body = player.components.inventory:GetEquippedItem(EQUIPSLOTS.BODY)
+
+    if head and HasComponents(head, "hh_equip") then
+        table.insert(candidates, { item = head, slot = EQUIPSLOTS.HEAD })
+    end
+    if body and HasComponents(body, "hh_equip") then
+        table.insert(candidates, { item = body, slot = EQUIPSLOTS.BODY })
+    end
+
+    if #candidates <= 0 then
+        return nil, nil
+    end
+
+    local choice = candidates[math.random(1, #candidates)]
+    return choice.item, choice.slot
+end
+
+local function DecomposeEquippedItem(player, equip)
+    if not player or not equip or not equip:IsValid() or not HasComponents(equip, "hh_equip") then
+        return false
+    end
+
+    if HasComponents(equip, "inventoryitem") then
+        equip.components.inventoryitem:RemoveFromOwner(true)
+    end
+    if equip:IsValid() then
+        equip:Remove()
+    end
+    return true
+end
+
 -- ============================================================
 -- Hook hh_monster 组件：注入新 effect keys + 包装战斗方法
 -- ============================================================
@@ -408,6 +509,43 @@ AddComponentPostInit("hh_monster", function(self, inst)
 
         return amount
     end
+
+    inst:ListenForEvent("onhitother", function(monster, data)
+        if not BREAK_EQUIP_ENABLED then
+            return
+        end
+
+        local chance = self:GetEffectValueByKey("breakEquipOnHitChance")
+        if chance <= 0 then
+            return
+        end
+
+        local target = data and data.target or nil
+        if not target or not target:IsValid() or not target:HasTag("player") or not HasComponents(target, "hh_player", "inventory") then
+            return
+        end
+
+        if math.random(1, 100) > math.min(chance, 100) then
+            return
+        end
+
+        local equip, slot = GetBreakableEquip(target)
+        if not equip then
+            return
+        end
+
+        local player_name = GetDisplayName(target)
+        local equip_name = GetDisplayName(equip)
+        local monster_name = GetDisplayName(monster)
+        local monster_title = GetMonsterTitle(monster)
+        local slot_label = GetSlotLabel(slot)
+
+        DecomposeEquippedItem(target, equip)
+
+        if TheNet then
+            TheNet:Announce(string.format("%s[%s]命中分解了%s的%s装备-%s", monster_title, monster_name, tostring(player_name), tostring(slot_label), tostring(equip_name)))
+        end
+    end)
 end)
 
 -- ============================================================

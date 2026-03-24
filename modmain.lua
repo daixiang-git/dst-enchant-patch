@@ -87,6 +87,7 @@ if GLOBAL.UnknownTagEnabled then
     modimport("postinit/suppress_effect.lua")
     modimport("postinit/effect_caps.lua")
     modimport("postinit/enchant_restrictions.lua")
+    modimport("postinit/treasure_boss_shared_reward.lua")
 end
 
 modimport("postinit/other.lua")     --其他杂项

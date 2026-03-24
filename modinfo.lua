@@ -2,6 +2,12 @@ name = "老斑鸠自用兼容补丁"
 description = [[自用，侵权联系删除
 
 【更新日志】
+v0.31 (2026-03-24)
+- 新增精英/Boss词条：命中有概率分解玩家头部或身体装备
+- 分解装备时复用附魔分解规则，修复分解后不掉附魔石的问题
+- 新增配置开关：可单独启用/禁用该词条
+- 新增概率范围配置：支持1%~3%或1%~5%
+- 调整宝藏Boss尾刀奖励：死亡点附近16范围内的玩家都可获得稀有宝石奖励
 v0.30 (2026-03-24)
 - 调整破界：兼容能力勋章的混沌抵抗
 - 调整破界：目标处于破界状态时，受到的伤害减半
@@ -26,7 +32,7 @@ v0.26 (2026-03-23)
 - 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
 ]]
 author = "老斑鸠"
-version = "0.30"
+version = "0.31"
 
 api_version = 10
 dst_compatible = true
@@ -312,6 +318,24 @@ configuration_options = {
             {description = "关闭", data = false}
         },
         default = true
+    }, {
+        name = "enable_monster_break_equip_effect",
+        label = "怪物分解装备词条",
+        hover = "开启后，精英/Boss可随机获得命中分解玩家头部/身体装备的词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "monster_break_equip_effect_range",
+        label = "分解装备词条概率范围",
+        hover = "设置精英/Boss该词条的随机概率范围",
+        options = {
+            {description = "1%~3%", data = "1_3"},
+            {description = "1%~5%", data = "1_5"}
+        },
+        default = "1_3"
     }, {
         name = "remove_player_effects",
         label = "移除部分玩家词条（免疫制裁、暗影伪装）",
