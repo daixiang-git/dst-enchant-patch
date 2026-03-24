@@ -77,9 +77,16 @@ if GLOBAL.RemovePlayerEffectsEnabled then
     modimport("postinit/remove_player_effects.lua")
 end
 
+GLOBAL.RemoveTreasureMonstersEnabled = GetModConfigData("remove_treasure_monsters") ~= false
+if GLOBAL.RemoveTreasureMonstersEnabled then
+    print("移除宝藏怪已激活")
+    modimport("postinit/remove_treasure_monsters.lua")
+end
+
 if GLOBAL.UnknownTagEnabled then
     modimport("postinit/suppress_effect.lua")
     modimport("postinit/effect_caps.lua")
+    modimport("postinit/enchant_restrictions.lua")
 end
 
 modimport("postinit/other.lua")     --其他杂项

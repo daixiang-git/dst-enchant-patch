@@ -2,6 +2,23 @@ name = "老斑鸠自用兼容补丁"
 description = [[自用，侵权联系删除
 
 【更新日志】
+v0.30 (2026-03-24)
+- 调整破界：兼容能力勋章的混沌抵抗
+- 调整破界：目标处于破界状态时，受到的伤害减半
+- 同步更新帮助页补丁变更日志
+v0.29 (2026-03-24)
+- 新增稀有附魔石“破界”：附魔时概率范围1%~10%，可使拥有位面抵抗的怪物失去位面抵抗10秒，怪物内置冷却10秒
+- 修复破界词条显示、附魔石描述和触发提示异常的问题
+v0.28 (2026-03-24)
+- 新增配置开关：默认移除 treasure_kps、treasure_cat_you
+- 同步更新帮助页补丁变更日志
+v0.27 (2026-03-24)
+- 修复暗影伪装、月灵伪装移除后仍可能通过附魔卷轴/水晶转换出现的问题
+- 新增附魔限制：攻击距离大于2的武器禁止附魔
+- 新增配置开关：默认移除 treasure_kps、treasure_cat_you
+- 修复帮助页概率表不按配置显示的问题
+- 调整制裁效果：治疗压制改为-100%，持续时间翻倍
+- 调整部分玩家词条上限：暗影护盾30%，伤害减免50%，秋季战神仅生效1条，白天/黄昏/夜晚增伤上限100
 v0.26 (2026-03-23)
 - 新增水晶小人转换概率配置（稀有/超稀有词条概率可自定义）
 - 新增累计保底系统：转换水晶小人、击杀精英怪、击杀Boss独立计数
@@ -9,7 +26,7 @@ v0.26 (2026-03-23)
 - 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
 ]]
 author = "老斑鸠"
-version = "0.26"
+version = "0.30"
 
 api_version = 10
 dst_compatible = true
@@ -304,6 +321,15 @@ configuration_options = {
             {description = "关闭", data = false}
         },
         default = false
+    }, {
+        name = "remove_treasure_monsters",
+        label = "移除部分宝藏怪",
+        hover = "开启后，默认移除 treasure_kps 和 treasure_cat_you",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
     }, {
         name = "enable_monster_effect_limit",
         label = "修改怪物词条数量上限",
