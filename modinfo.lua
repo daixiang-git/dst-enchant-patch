@@ -2,6 +2,29 @@ name = "老斑鸠自用兼容补丁"
 description = [[自用，侵权联系删除
 
 【更新日志】
+v0.53 (2026-04-02)
+- 修正冲撞与飞扑表现：飞扑改为真实位移轨迹接近目标，冲撞补充持续突进过程与轨迹表现
+v0.52 (2026-04-02)
+- 调整冲撞与飞扑触发阶段：改为追击阶段判定，不再依赖攻击事件触发
+v0.51 (2026-04-02)
+- 新增第二批怪物技能词条：冲撞、飞扑
+- 技能实现继续采用兼容性优先方案，不直接替换原版整套状态机
+v0.50 (2026-04-02)
+- 进一步修正怪物技能词条触发逻辑：喷吐改为对玩家仇恨目标进行范围判定；震击改为攻击命中时同步触发
+v0.49 (2026-04-02)
+- 新增配置开关：可控制5个Boss独有词条是否同步开放给精英怪，默认开启
+v0.48 (2026-04-02)
+- 修正怪物技能词条触发与表现：喷吐改为真实投射物轨迹命中，震击补充明显范围特效，并提高技能实际触发频率
+v0.47 (2026-04-02)
+- 新增第一批怪物技能词条：喷吐、范围震击
+- 技能适配采用标签筛选 + 黑名单排除，尽量降低兼容性风险
+- 新增两个独立配置开关：可分别控制喷吐词条和范围震击词条
+v0.46 (2026-04-02)
+- 提升补丁版本号
+v0.45 (2026-04-02)
+- 修正“免疫潮冻”复合普通附魔石效果：由免疫潮湿+免疫过热改为免疫潮湿+免疫冰冻
+v0.44 (2026-04-02)
+- 提升补丁版本号
 v0.43 (2026-04-02)
 - 调整原版黄昏增伤附魔石：取消唯一性，改为可重复附魔
 v0.42 (2026-04-02)
@@ -65,7 +88,7 @@ v0.26 (2026-03-23)
 - 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
 ]]
 author = "老斑鸠"
-version = "0.43"
+version = "0.53"
 
 api_version = 10
 dst_compatible = true
@@ -79,7 +102,22 @@ icon = "modicon.tex"
 server_filter_tags = {"compatibility", "enhancement", "enchantment"}
 priority = -9999
 
+local _section_index = 0
+local function MakeSection(label, hover)
+    _section_index = _section_index + 1
+    return {
+        name = "__section_" .. _section_index,
+        label = "【" .. label .. "】",
+        hover = hover or "仅用于分组显示",
+        options = {
+            {description = "查看下方配置", data = false}
+        },
+        default = false
+    }
+end
+
 configuration_options = {
+    MakeSection("基础功能", "补丁总开关与基础世界规则"),
     {
         name = "ENABLE_UNKNOWN_TAG",
         label = "启用附魔补丁",
@@ -125,7 +163,10 @@ configuration_options = {
             {description = "关闭", data = false}
         },
         default = true
-    }, {
+    },
+
+    MakeSection("掉落系统", "卷轴掉落相关配置"),
+    {
         name = "ENABLE_DROP_SYSTEM",
         label = "开启掉落系统",
         hover = "开启做饭、巨大作物、砍树、挖矿、钓鱼概率掉落卷轴",
@@ -262,7 +303,10 @@ configuration_options = {
             {description = "40", data = 40}, {description = "50", data = 50}
         },
         default = 5
-    }, {
+    },
+
+    MakeSection("辅助与开局", "宝石、初始礼物与杂项辅助"),
+    {
         name = "ENABLE_100_DAY_REWARD",
         label = "开启100天生存奖励",
         hover = "玩家生存满100天后自动获得元素防御附魔石",
@@ -342,7 +386,10 @@ configuration_options = {
             {description = "关闭", data = false}
         },
         default = true
-    }, {
+    },
+
+    MakeSection("附魔扩展", "新增附魔石、复合石与基础附魔规则"),
+    {
         name = "enable_true_melee_enchant_stone",
         label = "开启真近战附魔石",
         hover = "开启后，可获得普通/稀有两种真近战附魔石，仅限攻击距离1~2的手部武器附魔",
@@ -355,6 +402,72 @@ configuration_options = {
         name = "enable_compound_common_immunity_stones",
         label = "开启复合普通附魔石",
         hover = "开启后，可使用免疫冷热、免疫潮冻、免疫眠粘三种复合普通附魔石",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_life_enchant_stone",
+        label = "开启生命附魔石随机获取",
+        hover = "开启后，初/中/高/极生命附魔石会进入正常随机池",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_long_range_enchant_restriction",
+        label = "远程武器禁止附魔",
+        hover = "开启后，攻击距离大于2的武器将无法附魔",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    },
+
+    MakeSection("怪物技能与词条", "怪物技能词条、玩家词条扩展与特殊下放"),
+    {
+        name = "enable_monster_spit_skill",
+        label = "怪物技能词条：喷吐",
+        hover = "开启后，符合条件的怪物可随机获得喷吐类技能词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_shockwave_skill",
+        label = "怪物技能词条：震击",
+        hover = "开启后，符合条件的大型战怪可随机获得范围震击词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_charge_skill",
+        label = "怪物技能词条：冲撞",
+        hover = "开启后，符合条件的大型战怪可随机获得冲撞技能词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_pounce_skill",
+        label = "怪物技能词条：飞扑",
+        hover = "开启后，符合条件的战怪可随机获得飞扑技能词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_boss_skills_for_elite",
+        label = "Boss词条下放精英",
+        hover = "开启后，5个Boss独有词条会同步开放给精英怪",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}
@@ -397,15 +510,6 @@ configuration_options = {
         },
         default = true
     }, {
-        name = "enable_life_enchant_stone",
-        label = "开启生命附魔石随机获取",
-        hover = "开启后，初/中/高/极生命附魔石会进入正常随机池",
-        options = {
-            {description = "开启", data = true},
-            {description = "关闭", data = false}
-        },
-        default = true
-    }, {
         name = "enable_monster_break_equip_effect",
         label = "怪物分解装备词条",
         hover = "开启后，精英/Boss可随机获得命中分解玩家头部/身体装备的词条",
@@ -441,16 +545,10 @@ configuration_options = {
             {description = "关闭", data = false}
         },
         default = true
-    }, {
-        name = "enable_long_range_enchant_restriction",
-        label = "远程武器禁止附魔",
-        hover = "开启后，攻击距离大于2的武器将无法附魔",
-        options = {
-            {description = "开启", data = true},
-            {description = "关闭", data = false}
-        },
-        default = true
-    }, {
+    },
+
+    MakeSection("怪物成长与掉落", "怪物词条数量、成长曲线与精英/Boss掉率"),
+    {
         name = "enable_monster_effect_limit",
         label = "修改怪物词条数量上限",
         hover = "开启后，可自定义不同级别怪物的词条数量上限",
@@ -634,7 +732,10 @@ configuration_options = {
             {description = "3%(默认)", data = 0.03}
         },
         default = 0.03
-    }, {
+    },
+
+    MakeSection("转换与保底", "水晶小人转换概率与累计保底系统"),
+    {
         name = "enable_stone_convert_config",
         label = "修改水晶小人转换概率",
         hover = "开启后，可自定义水晶小人转换附魔石的概率",

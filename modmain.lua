@@ -34,6 +34,10 @@ GLOBAL.GemWORMWOOD = GetModConfigData("ENABLE_WORMWOOD") or false
 GLOBAL.enable_new_effect = GetModConfigData("enable_new_effect") or false
 GLOBAL.EnableTrueMeleeEnchantStone = GetModConfigData("enable_true_melee_enchant_stone") ~= false
 GLOBAL.EnableCompoundCommonImmunityStones = GetModConfigData("enable_compound_common_immunity_stones") ~= false
+GLOBAL.EnableMonsterSpitSkill = GetModConfigData("enable_monster_spit_skill") ~= false
+GLOBAL.EnableMonsterShockwaveSkill = GetModConfigData("enable_monster_shockwave_skill") ~= false
+GLOBAL.EnableMonsterChargeSkill = GetModConfigData("enable_monster_charge_skill") ~= false
+GLOBAL.EnableMonsterPounceSkill = GetModConfigData("enable_monster_pounce_skill") ~= false
 
 
 if GLOBAL.UnknownTagEnabled then
@@ -75,6 +79,11 @@ end
 if GLOBAL.EnableCompoundCommonImmunityStones then
     print("复合普通附魔石已激活")
     modimport("postinit/compound_common_immunity_stones.lua")
+end
+
+if GLOBAL.EnableMonsterSpitSkill or GLOBAL.EnableMonsterShockwaveSkill or GLOBAL.EnableMonsterChargeSkill or GLOBAL.EnableMonsterPounceSkill then
+    print("怪物技能词条已激活")
+    modimport("postinit/monster_skill_effects.lua")
 end
 
 GLOBAL.MonsterPlayerEffectsEnabled = GetModConfigData("enable_monster_player_effects") or false

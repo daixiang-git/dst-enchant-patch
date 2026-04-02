@@ -13,6 +13,7 @@ local BREAK_EQUIP_MAX = BREAK_EQUIP_RANGE_MODE == "1_5" and 5 or 3
 local ATTACK_RANGE_ENABLED = GetModConfigData("enable_monster_attack_range_effect") ~= false
 local ATTACK_SPEED_ENABLED = GetModConfigData("enable_monster_attack_speed_effect") ~= false
 local HEDGEHOG_ENABLED = GetModConfigData("enable_monster_hedgehog_effect") ~= false
+local BOSS_SKILLS_TO_ELITE_ENABLED = GetModConfigData("enable_boss_skills_for_elite") ~= false
 
 local NEW_EFFECT_KEYS = {
     "trueDamageNum",                -- 真实伤害（穿刺）
@@ -775,18 +776,20 @@ local function InjectNewBuffs()
         end
     end
 
-    local boss_only_to_elite = {
-        "iceTurret",
-        "fireTurret",
-        "poisonTurret",
-        "iceLaser",
-        "noHitDamage",
-    }
+    if BOSS_SKILLS_TO_ELITE_ENABLED then
+        local boss_only_to_elite = {
+            "iceTurret",
+            "fireTurret",
+            "poisonTurret",
+            "iceLaser",
+            "noHitDamage",
+        }
 
-    if type(hh_monster_enum.elite_monster) == "table" and type(hh_monster_enum.boss_monster) == "table" then
-        for _, buff_name in ipairs(boss_only_to_elite) do
-            if hh_monster_enum.elite_monster[buff_name] == nil and type(hh_monster_enum.boss_monster[buff_name]) == "table" then
-                hh_monster_enum.elite_monster[buff_name] = CloneBuffData(hh_monster_enum.boss_monster[buff_name])
+        if type(hh_monster_enum.elite_monster) == "table" and type(hh_monster_enum.boss_monster) == "table" then
+            for _, buff_name in ipairs(boss_only_to_elite) do
+                if hh_monster_enum.elite_monster[buff_name] == nil and type(hh_monster_enum.boss_monster[buff_name]) == "table" then
+                    hh_monster_enum.elite_monster[buff_name] = CloneBuffData(hh_monster_enum.boss_monster[buff_name])
+                end
             end
         end
     end

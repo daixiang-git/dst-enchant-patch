@@ -48,8 +48,8 @@ RegisterCompoundCommonStone("compound_common_moist_hot", {
     id = 10093,
     name = "免疫潮冻",
     client_text = "普\n潮冻",
-    desc = "免疫潮湿和过热",
-    effect_keys = { "immunityMoisture", "immuneHot" },
+    desc = "免疫潮湿和冰冻",
+    effect_keys = { "immunityMoisture", "immuneFreeze" },
 })
 
 RegisterCompoundCommonStone("compound_common_sleep_stick", {
