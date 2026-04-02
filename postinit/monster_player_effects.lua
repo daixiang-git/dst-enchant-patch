@@ -10,6 +10,9 @@
 local BREAK_EQUIP_ENABLED = GetModConfigData("enable_monster_break_equip_effect") ~= false
 local BREAK_EQUIP_RANGE_MODE = GetModConfigData("monster_break_equip_effect_range") or "1_3"
 local BREAK_EQUIP_MAX = BREAK_EQUIP_RANGE_MODE == "1_5" and 5 or 3
+local ATTACK_RANGE_ENABLED = GetModConfigData("enable_monster_attack_range_effect") ~= false
+local ATTACK_SPEED_ENABLED = GetModConfigData("enable_monster_attack_speed_effect") ~= false
+local HEDGEHOG_ENABLED = GetModConfigData("enable_monster_hedgehog_effect") ~= false
 
 local NEW_EFFECT_KEYS = {
     "trueDamageNum",                -- 真实伤害（穿刺）
@@ -22,6 +25,9 @@ local NEW_EFFECT_KEYS = {
     "targetPercentDamage",          -- 末世（目标当前血量百分比伤害）
     "immunePoison",                 -- 免疫中毒
     "breakEquipOnHitChance",        -- 命中概率分解头部/身体装备
+    "attackRangeBonus",             -- 攻击距离增加
+    "attackSpeedPercent",           -- 攻击速度增加（减少攻击间隔）
+    "hedgehogTrueReflect",          -- 受击后真实反伤
 }
 
 -- ============================================================
@@ -326,6 +332,111 @@ if BREAK_EQUIP_ENABLED then
     NEW_MONSTER_BUFFS.boss_monster.patch_breakEquip = break_equip_buff
 end
 
+if ATTACK_RANGE_ENABLED then
+    NEW_MONSTER_BUFFS.common_monster.patch_attackRange = {
+        name = "攻击距离+%s",
+        only_one = true,
+        rangeValue = { min = 1, max = 1 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("attackRangeBonus", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.elite_monster.patch_attackRange = {
+        name = "攻击距离+%s",
+        only_one = true,
+        rangeValue = { min = 1, max = 2 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("attackRangeBonus", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.boss_monster.patch_attackRange = {
+        name = "攻击距离+%s",
+        only_one = true,
+        rangeValue = { min = 1, max = 2 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("attackRangeBonus", value)
+            end
+        end,
+    }
+end
+
+if ATTACK_SPEED_ENABLED then
+    NEW_MONSTER_BUFFS.common_monster.patch_attackSpeed = {
+        name = "攻击速度+%s%%",
+        only_one = true,
+        rangeValue = { min = 10, max = 100 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("attackSpeedPercent", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.elite_monster.patch_attackSpeed = {
+        name = "攻击速度+%s%%",
+        only_one = true,
+        rangeValue = { min = 30, max = 100 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("attackSpeedPercent", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.boss_monster.patch_attackSpeed = {
+        name = "攻击速度+%s%%",
+        only_one = true,
+        rangeValue = { min = 50, max = 200 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("attackSpeedPercent", value)
+            end
+        end,
+    }
+end
+
+if HEDGEHOG_ENABLED then
+    NEW_MONSTER_BUFFS.common_monster.patch_hedgehog = {
+        name = "刺猬(受击真伤反伤+%s)",
+        only_one = true,
+        rangeValue = { min = 1, max = 3 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("hedgehogTrueReflect", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.elite_monster.patch_hedgehog = {
+        name = "刺猬(受击真伤反伤+%s)",
+        only_one = true,
+        rangeValue = { min = 3, max = 6 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("hedgehogTrueReflect", value)
+            end
+        end,
+    }
+
+    NEW_MONSTER_BUFFS.boss_monster.patch_hedgehog = {
+        name = "刺猬(受击真伤反伤+%s)",
+        only_one = true,
+        rangeValue = { min = 5, max = 10 },
+        start_fn = function(inst, value)
+            if inst:IsValid() and inst.components.hh_monster then
+                inst.components.hh_monster:AddEffectValueByKey("hedgehogTrueReflect", value)
+            end
+        end,
+    }
+end
+
 local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
 
 local function HasComponents(inst, ...)
@@ -339,6 +450,75 @@ local function HasComponents(inst, ...)
         end
     end
     return true
+end
+
+local function CacheCombatDefaults(inst)
+    if not HasComponents(inst, "combat") then
+        return nil
+    end
+
+    local combat = inst.components.combat
+
+    if combat.hh_patch_base_attack_range == nil then
+        combat.hh_patch_base_attack_range = combat.attackrange or 0
+    end
+    if combat.hh_patch_base_hit_range == nil then
+        combat.hh_patch_base_hit_range = combat.hitrange or combat.attackrange or 0
+    end
+    if combat.hh_patch_base_attack_period == nil then
+        combat.hh_patch_base_attack_period = combat.min_attack_period or combat.attackperiod
+    end
+
+    return combat
+end
+
+local function ApplyCombatEffectModifiers(self)
+    local inst = self and self.inst or nil
+    if not inst then
+        return
+    end
+
+    local combat = CacheCombatDefaults(inst)
+    if combat == nil then
+        return
+    end
+
+    local range_bonus = ATTACK_RANGE_ENABLED and self:GetEffectValueByKey("attackRangeBonus") or 0
+    local speed_percent = ATTACK_SPEED_ENABLED and self:GetEffectValueByKey("attackSpeedPercent") or 0
+
+    if combat.SetRange and combat.hh_patch_base_attack_range ~= nil then
+        local base_attack_range = combat.hh_patch_base_attack_range or 0
+        local base_hit_range = combat.hh_patch_base_hit_range or base_attack_range
+        local new_attack_range = math.max(base_attack_range + range_bonus, 0)
+        local new_hit_range = math.max(base_hit_range + range_bonus, new_attack_range)
+        combat:SetRange(new_attack_range, new_hit_range)
+    end
+
+    if combat.SetAttackPeriod and combat.hh_patch_base_attack_period ~= nil then
+        local base_period = combat.hh_patch_base_attack_period
+        local speed_mult = math.max(0.2, 1 - speed_percent / 100)
+        combat:SetAttackPeriod(math.max(base_period * speed_mult, 0.2))
+    end
+end
+
+local function CloneBuffData(buff_data)
+    if type(buff_data) ~= "table" then
+        return buff_data
+    end
+
+    local cloned = {}
+    for k, v in pairs(buff_data) do
+        if type(v) == "table" then
+            local child = {}
+            for ck, cv in pairs(v) do
+                child[ck] = cv
+            end
+            cloned[k] = child
+        else
+            cloned[k] = v
+        end
+    end
+    return cloned
 end
 
 local function GetDisplayName(inst)
@@ -417,6 +597,16 @@ AddComponentPostInit("hh_monster", function(self, inst)
                 self.hh_effects[key] = 0
             end
         end
+    end
+
+    local _orig_RefreshSpecialFn = self.RefreshSpecialFn
+    self.RefreshSpecialFn = function(self, ...)
+        local result = nil
+        if _orig_RefreshSpecialFn then
+            result = _orig_RefreshSpecialFn(self, ...)
+        end
+        ApplyCombatEffectModifiers(self)
+        return result
     end
 
     -- 2. 包装 DoAttackDamage —— 追加新效果的伤害计算
@@ -507,6 +697,17 @@ AddComponentPostInit("hh_monster", function(self, inst)
             end
         end
 
+        local hedgehogReflect = self:GetEffectValueByKey("hedgehogTrueReflect")
+        if hedgehogReflect > 0
+            and attacker ~= self.inst
+            and attacker.components
+            and attacker.components.health
+            and not attacker.components.health:IsDead()
+            and attacker.components.health.DoHHDelta
+        then
+            attacker.components.health:DoHHDelta(-hedgehogReflect, self.inst, "刺猬")
+        end
+
         return amount
     end
 
@@ -546,6 +747,8 @@ AddComponentPostInit("hh_monster", function(self, inst)
             TheNet:Announce(string.format("%s[%s]命中分解了%s的%s装备-%s", monster_title, monster_name, tostring(player_name), tostring(slot_label), tostring(equip_name)))
         end
     end)
+
+    ApplyCombatEffectModifiers(self)
 end)
 
 -- ============================================================
@@ -568,6 +771,22 @@ local function InjectNewBuffs()
                 if not hh_monster_enum[monster_type][buff_name] then
                     hh_monster_enum[monster_type][buff_name] = buff_data
                 end
+            end
+        end
+    end
+
+    local boss_only_to_elite = {
+        "iceTurret",
+        "fireTurret",
+        "poisonTurret",
+        "iceLaser",
+        "noHitDamage",
+    }
+
+    if type(hh_monster_enum.elite_monster) == "table" and type(hh_monster_enum.boss_monster) == "table" then
+        for _, buff_name in ipairs(boss_only_to_elite) do
+            if hh_monster_enum.elite_monster[buff_name] == nil and type(hh_monster_enum.boss_monster[buff_name]) == "table" then
+                hh_monster_enum.elite_monster[buff_name] = CloneBuffData(hh_monster_enum.boss_monster[buff_name])
             end
         end
     end

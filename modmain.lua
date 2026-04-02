@@ -32,6 +32,8 @@ GLOBAL.DropReelEnabled = GetModConfigData("ENABLE_DROP_SYSTEM") or false
 GLOBAL.GemEnabled = GetModConfigData("ENABLE_GEM") or false
 GLOBAL.GemWORMWOOD = GetModConfigData("ENABLE_WORMWOOD") or false
 GLOBAL.enable_new_effect = GetModConfigData("enable_new_effect") or false
+GLOBAL.EnableTrueMeleeEnchantStone = GetModConfigData("enable_true_melee_enchant_stone") ~= false
+GLOBAL.EnableCompoundCommonImmunityStones = GetModConfigData("enable_compound_common_immunity_stones") ~= false
 
 
 if GLOBAL.UnknownTagEnabled then
@@ -63,6 +65,16 @@ end
 if GLOBAL.enable_new_effect then
     print("添加新附魔石已激活")
     modimport("postinit/addNewEffect.lua")     --配方
+end
+
+if GLOBAL.EnableTrueMeleeEnchantStone then
+    print("真近战附魔石已激活")
+    modimport("postinit/true_melee_enchant.lua")
+end
+
+if GLOBAL.EnableCompoundCommonImmunityStones then
+    print("复合普通附魔石已激活")
+    modimport("postinit/compound_common_immunity_stones.lua")
 end
 
 GLOBAL.MonsterPlayerEffectsEnabled = GetModConfigData("enable_monster_player_effects") or false

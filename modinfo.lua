@@ -2,6 +2,28 @@ name = "老斑鸠自用兼容补丁"
 description = [[自用，侵权联系删除
 
 【更新日志】
+v0.43 (2026-04-02)
+- 调整原版黄昏增伤附魔石：取消唯一性，改为可重复附魔
+v0.42 (2026-04-02)
+- 调整复合普通附魔石来源：现在可通过普通附魔获取
+v0.41 (2026-04-02)
+- 新增3颗复合普通附魔石：免疫冷热、免疫潮冻、免疫眠粘
+- 新增独立配置开关：可控制复合普通附魔石是否启用，默认开启
+v0.40 (2026-04-02)
+- 新增“真近战”附魔石：普通版提供50%伤害加成和25点固定增伤，稀有版提供100%伤害加成和50点固定增伤
+- 仅允许攻击距离1~2的手部武器附魔，且词条唯一
+- 新增独立配置开关：可控制真近战附魔石是否启用，默认开启
+v0.39 (2026-04-02)
+- 提升补丁版本号
+v0.38 (2026-04-02)
+- 将5个Boss独有词条同步开放给精英怪：冰炮台、火炮台、毒炮台、冰激光、概率免伤
+v0.37 (2026-04-02)
+- 怪物玩家词条扩展新增“刺猬”词条：怪物受击后可对攻击者造成真实反伤
+- 新增独立配置开关：可控制“刺猬”词条是否进入怪物随机词条池
+v0.36 (2026-04-02)
+- 怪物玩家词条扩展新增两种词条：攻击距离、攻击速度
+- 新增两个独立配置开关：可分别控制这两种词条是否进入怪物随机词条池
+- 两个开关默认均为开启
 v0.35 (2026-03-27)
 - 新增配置开关：可控制生命附魔石是否进入正常随机池
 - 默认开启生命附魔石随机获取
@@ -43,7 +65,7 @@ v0.26 (2026-03-23)
 - 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
 ]]
 author = "老斑鸠"
-version = "0.35"
+version = "0.43"
 
 api_version = 10
 dst_compatible = true
@@ -321,9 +343,54 @@ configuration_options = {
         },
         default = true
     }, {
+        name = "enable_true_melee_enchant_stone",
+        label = "开启真近战附魔石",
+        hover = "开启后，可获得普通/稀有两种真近战附魔石，仅限攻击距离1~2的手部武器附魔",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_compound_common_immunity_stones",
+        label = "开启复合普通附魔石",
+        hover = "开启后，可使用免疫冷热、免疫潮冻、免疫眠粘三种复合普通附魔石",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
         name = "enable_monster_player_effects",
         label = "怪物玩家词条（真伤/暴击/反伤/末世/血涌）",
         hover = "让怪物随机获得玩家专属词条，使怪物更加强大",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_attack_range_effect",
+        label = "怪物攻击距离词条",
+        hover = "开启后，怪物玩家词条扩展可随机加入攻击距离提升词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_attack_speed_effect",
+        label = "怪物攻击速度词条",
+        hover = "开启后，怪物玩家词条扩展可随机加入攻击速度提升词条",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_hedgehog_effect",
+        label = "怪物刺猬词条",
+        hover = "开启后，怪物玩家词条扩展可随机加入受击真实反伤词条",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}

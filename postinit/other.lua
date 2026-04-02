@@ -174,3 +174,11 @@ if enable_start_give then
     end
 
 end
+
+AddSimPostInit(function()
+    local HH_EQUIP_BUFF_LIST = rawget(_G, "HH_EQUIP_BUFF_LIST")
+    if HH_EQUIP_BUFF_LIST ~= nil and HH_EQUIP_BUFF_LIST["add_dusk_damage"] ~= nil then
+        HH_EQUIP_BUFF_LIST["add_dusk_damage"].only_one = false
+        print("[附魔补丁] 已修改黄昏增伤词条为可重复附魔")
+    end
+end)
