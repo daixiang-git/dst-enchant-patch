@@ -2,6 +2,17 @@ name = "老斑鸠自用兼容补丁"
 description = [[自用，侵权联系删除
 
 【更新日志】
+v0.35 (2026-03-27)
+- 新增配置开关：可控制生命附魔石是否进入正常随机池
+- 默认开启生命附魔石随机获取
+v0.34 (2026-03-25)
+- 修复开启掉率系统后，额外掉落会直接掉地上的问题；现在优先放入玩家背包，背包放不下时才掉地
+- 修复树精、大象等新生成怪物的初始词条没有立即吃到天数成长的问题
+v0.33 (2026-03-24)
+- 修复“怪物词条数量配置”启用后，新生成怪物有时不获得初始词条的问题
+v0.32 (2026-03-24)
+- 新增配置开关：可控制“攻击距离大于2的武器禁止附魔”是否生效，默认开启
+- 同步更新帮助页补丁变更日志
 v0.31 (2026-03-24)
 - 新增精英/Boss词条：命中有概率分解玩家头部或身体装备
 - 分解装备时复用附魔分解规则，修复分解后不掉附魔石的问题
@@ -32,7 +43,7 @@ v0.26 (2026-03-23)
 - 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
 ]]
 author = "老斑鸠"
-version = "0.31"
+version = "0.35"
 
 api_version = 10
 dst_compatible = true
@@ -319,6 +330,15 @@ configuration_options = {
         },
         default = true
     }, {
+        name = "enable_life_enchant_stone",
+        label = "开启生命附魔石随机获取",
+        hover = "开启后，初/中/高/极生命附魔石会进入正常随机池",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
         name = "enable_monster_break_equip_effect",
         label = "怪物分解装备词条",
         hover = "开启后，精英/Boss可随机获得命中分解玩家头部/身体装备的词条",
@@ -349,6 +369,15 @@ configuration_options = {
         name = "remove_treasure_monsters",
         label = "移除部分宝藏怪",
         hover = "开启后，默认移除 treasure_kps 和 treasure_cat_you",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_long_range_enchant_restriction",
+        label = "远程武器禁止附魔",
+        hover = "开启后，攻击距离大于2的武器将无法附魔",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}

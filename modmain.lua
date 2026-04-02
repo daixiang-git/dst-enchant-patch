@@ -71,6 +71,12 @@ if GLOBAL.MonsterPlayerEffectsEnabled then
     modimport("postinit/monster_player_effects.lua")
 end
 
+GLOBAL.EnableLifeEnchantStone = GetModConfigData("enable_life_enchant_stone") or false
+if GLOBAL.EnableLifeEnchantStone then
+    print("生命附魔石随机池已开启")
+    modimport("postinit/life_enchant_stone.lua")
+end
+
 GLOBAL.RemovePlayerEffectsEnabled = GetModConfigData("remove_player_effects") or false
 if GLOBAL.RemovePlayerEffectsEnabled then
     print("移除部分玩家词条已激活")
@@ -83,10 +89,14 @@ if GLOBAL.RemoveTreasureMonstersEnabled then
     modimport("postinit/remove_treasure_monsters.lua")
 end
 
+GLOBAL.EnableLongRangeEnchantRestriction = GetModConfigData("enable_long_range_enchant_restriction") ~= false
+
 if GLOBAL.UnknownTagEnabled then
     modimport("postinit/suppress_effect.lua")
     modimport("postinit/effect_caps.lua")
-    modimport("postinit/enchant_restrictions.lua")
+    if GLOBAL.EnableLongRangeEnchantRestriction then
+        modimport("postinit/enchant_restrictions.lua")
+    end
     modimport("postinit/treasure_boss_shared_reward.lua")
 end
 

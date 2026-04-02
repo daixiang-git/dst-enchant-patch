@@ -33,6 +33,8 @@ local MONSTER_TYPES = {
     BOSS = "boss_monster"
 }
 
+local HH_PREFAB_LIST = require("enums/hh_prefab_list")
+
 -- 配置键名（与本体mod保持一致，无混淆）
 local HH_CHANCE_CONFIG = "HH_CHANCE_CONFIG"
 local MONSTER_EFFECT_NUM = "MONSTER_EFFECT_NUM"
@@ -60,6 +62,37 @@ local function getLimitByType(monster_type)
         return elite_limit
     else
         return common_limit
+    end
+end
+
+local function getDayBonus()
+    local cycles = TheWorld and TheWorld.state and TheWorld.state.cycles or 0
+    local interval = math.max(1, add_days)
+    return math.floor(cycles / interval) + 1
+end
+
+local function getDesiredEffectCount(monster_type)
+    local base_num = getBaseByType(monster_type)
+    local limit = getLimitByType(monster_type)
+    return math.min(limit, base_num + getDayBonus())
+end
+
+local function getMonsterTypeFallback(inst, self)
+    local monster_type = self and self.GetMonsterType and self:GetMonsterType() or nil
+    if monster_type ~= nil then
+        return monster_type
+    end
+
+    if inst == nil or inst.prefab == nil then
+        return MONSTER_TYPES.COMMON
+    end
+
+    if HH_PREFAB_LIST.boss_monster and HH_PREFAB_LIST.boss_monster[inst.prefab] then
+        return MONSTER_TYPES.BOSS
+    elseif HH_PREFAB_LIST.elite_monster and HH_PREFAB_LIST.elite_monster[inst.prefab] then
+        return MONSTER_TYPES.ELITE
+    else
+        return MONSTER_TYPES.COMMON
     end
 end
 
@@ -112,8 +145,7 @@ AddComponentPostInit("hh_monster", function(self, inst)
     inst:DoTaskInTime(0, function()
         if not self or not inst then return end
         
-        local monster_type = self:GetMonsterType()
-        if not monster_type then return end
+        local monster_type = getMonsterTypeFallback(inst, self)
         
         local limit = getLimitByType(monster_type)
         
@@ -128,19 +160,12 @@ AddComponentPostInit("hh_monster", function(self, inst)
             return
         end
         
-        -- 获取怪物类型
-        local monster_type = self:GetMonsterType()
-        if not monster_type then return end
+        -- 获取怪物类型。新生成怪物此时常常还没写入 hh_monster_type，
+        -- 需要回退到 prefab 列表判定，否则会直接跳过初始词条。
+        local monster_type = getMonsterTypeFallback(self.inst, self)
         
         -- 获取该类型的基础词条数
-        local base_num = getBaseByType(monster_type)
-        local limit = getLimitByType(monster_type)
-        
-        -- 计算天数加成
-        local day_bonus = math.floor(TheWorld.state.cycles / add_days) + 1
-        
-        -- 最终词条数 = min(上限, max(基础, 天数加成))
-        local effect_count = math.min(limit, math.max(base_num, day_bonus))
+        local effect_count = getDesiredEffectCount(monster_type)
         
         -- 当前已有词条数
         local current_count = self:GetAllBuffNum()

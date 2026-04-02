@@ -125,6 +125,23 @@ local function logDrop(itemName, playerName, prefabName, totalCount, itemCount)
         itemName, playerName, prefabName, totalCount, itemCount))
 end
 
+local function GiveDropToPlayerOrGround(player, itemPrefab, position)
+    local item = GLOBAL.SpawnPrefab(itemPrefab)
+    if item == nil then
+        return false
+    end
+
+    local inventory = player ~= nil and player.components ~= nil and player.components.inventory or nil
+    if inventory ~= nil and inventory:GiveItem(item, nil, position, false) then
+        return true
+    end
+
+    if item:IsValid() then
+        item.Transform:SetPosition(position:Get())
+    end
+    return false
+end
+
 --黑名单物品列表
 local BLACKLIST_PREFAB = {
     "wetgoop",     --潮湿黏糊
@@ -175,7 +192,7 @@ local function CheckAndDropGold(harvester, prefabName, position, dropChance)
     -- 概率判定
     if math.random() < dropChance then
         local itemToSpawn = math.random() < 0.5 and "hh_effect_tally" or "hh_remove_stone"
-        GLOBAL.SpawnPrefab(itemToSpawn).Transform:SetPosition(position:Get())
+        GiveDropToPlayerOrGround(harvester, itemToSpawn, position)
 
         -- 更新记忆
         playerData.count = playerData.count + 1
