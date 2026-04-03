@@ -38,6 +38,15 @@ GLOBAL.EnableMonsterSpitSkill = GetModConfigData("enable_monster_spit_skill") ~=
 GLOBAL.EnableMonsterShockwaveSkill = GetModConfigData("enable_monster_shockwave_skill") ~= false
 GLOBAL.EnableMonsterChargeSkill = GetModConfigData("enable_monster_charge_skill") ~= false
 GLOBAL.EnableMonsterPounceSkill = GetModConfigData("enable_monster_pounce_skill") ~= false
+GLOBAL.EnableMonsterBarrageSkill = GetModConfigData("enable_monster_barrage_skill") ~= false
+GLOBAL.EnableMonsterTrapSkill = GetModConfigData("enable_monster_trap_skill") ~= false
+GLOBAL.EnableMonsterBoltSkill = GetModConfigData("enable_monster_bolt_skill") ~= false
+GLOBAL.EnableMonsterFreezeRingSkill = GetModConfigData("enable_monster_freeze_ring_skill") ~= false
+GLOBAL.EnableMonsterFireRingSkill = GetModConfigData("enable_monster_fire_ring_skill") ~= false
+GLOBAL.EnableMonsterFlameConeSkill = GetModConfigData("enable_monster_flame_cone_skill") ~= false
+GLOBAL.EnableMonsterTwinLaserSkill = GetModConfigData("enable_monster_twin_laser_skill") ~= false
+GLOBAL.EnableMonsterTwinDashSkill = GetModConfigData("enable_monster_twin_dash_skill") ~= false
+GLOBAL.EnableMonsterTwinHellfireSkill = GetModConfigData("enable_monster_twin_hellfire_skill") ~= false
 
 
 if GLOBAL.UnknownTagEnabled then
@@ -81,7 +90,7 @@ if GLOBAL.EnableCompoundCommonImmunityStones then
     modimport("postinit/compound_common_immunity_stones.lua")
 end
 
-if GLOBAL.EnableMonsterSpitSkill or GLOBAL.EnableMonsterShockwaveSkill or GLOBAL.EnableMonsterChargeSkill or GLOBAL.EnableMonsterPounceSkill then
+if GLOBAL.EnableMonsterSpitSkill or GLOBAL.EnableMonsterShockwaveSkill or GLOBAL.EnableMonsterChargeSkill or GLOBAL.EnableMonsterPounceSkill or GLOBAL.EnableMonsterBarrageSkill or GLOBAL.EnableMonsterTrapSkill or GLOBAL.EnableMonsterBoltSkill or GLOBAL.EnableMonsterFreezeRingSkill or GLOBAL.EnableMonsterFireRingSkill or GLOBAL.EnableMonsterFlameConeSkill or GLOBAL.EnableMonsterTwinLaserSkill or GLOBAL.EnableMonsterTwinDashSkill or GLOBAL.EnableMonsterTwinHellfireSkill then
     print("怪物技能词条已激活")
     modimport("postinit/monster_skill_effects.lua")
 end

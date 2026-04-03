@@ -2,51 +2,18 @@ name = "老斑鸠自用兼容补丁"
 description = [[自用，侵权联系删除
 
 【更新日志】
-v0.53 (2026-04-02)
-- 修正冲撞与飞扑表现：飞扑改为真实位移轨迹接近目标，冲撞补充持续突进过程与轨迹表现
-v0.52 (2026-04-02)
-- 调整冲撞与飞扑触发阶段：改为追击阶段判定，不再依赖攻击事件触发
-v0.51 (2026-04-02)
-- 新增第二批怪物技能词条：冲撞、飞扑
-- 技能实现继续采用兼容性优先方案，不直接替换原版整套状态机
-v0.50 (2026-04-02)
-- 进一步修正怪物技能词条触发逻辑：喷吐改为对玩家仇恨目标进行范围判定；震击改为攻击命中时同步触发
-v0.49 (2026-04-02)
-- 新增配置开关：可控制5个Boss独有词条是否同步开放给精英怪，默认开启
-v0.48 (2026-04-02)
-- 修正怪物技能词条触发与表现：喷吐改为真实投射物轨迹命中，震击补充明显范围特效，并提高技能实际触发频率
-v0.47 (2026-04-02)
-- 新增第一批怪物技能词条：喷吐、范围震击
-- 技能适配采用标签筛选 + 黑名单排除，尽量降低兼容性风险
-- 新增两个独立配置开关：可分别控制喷吐词条和范围震击词条
-v0.46 (2026-04-02)
-- 提升补丁版本号
-v0.45 (2026-04-02)
-- 修正“免疫潮冻”复合普通附魔石效果：由免疫潮湿+免疫过热改为免疫潮湿+免疫冰冻
-v0.44 (2026-04-02)
-- 提升补丁版本号
-v0.43 (2026-04-02)
-- 调整原版黄昏增伤附魔石：取消唯一性，改为可重复附魔
-v0.42 (2026-04-02)
-- 调整复合普通附魔石来源：现在可通过普通附魔获取
-v0.41 (2026-04-02)
-- 新增3颗复合普通附魔石：免疫冷热、免疫潮冻、免疫眠粘
-- 新增独立配置开关：可控制复合普通附魔石是否启用，默认开启
-v0.40 (2026-04-02)
-- 新增“真近战”附魔石：普通版提供50%伤害加成和25点固定增伤，稀有版提供100%伤害加成和50点固定增伤
-- 仅允许攻击距离1~2的手部武器附魔，且词条唯一
-- 新增独立配置开关：可控制真近战附魔石是否启用，默认开启
-v0.39 (2026-04-02)
-- 提升补丁版本号
-v0.38 (2026-04-02)
-- 将5个Boss独有词条同步开放给精英怪：冰炮台、火炮台、毒炮台、冰激光、概率免伤
-v0.37 (2026-04-02)
-- 怪物玩家词条扩展新增“刺猬”词条：怪物受击后可对攻击者造成真实反伤
-- 新增独立配置开关：可控制“刺猬”词条是否进入怪物随机词条池
-v0.36 (2026-04-02)
-- 怪物玩家词条扩展新增两种词条：攻击距离、攻击速度
-- 新增两个独立配置开关：可分别控制这两种词条是否进入怪物随机词条池
-- 两个开关默认均为开启
+2026-04-03 概要
+- 新增怪物技能词条：连发弹幕、地刺陷阱、落雷、冰环、火阵、扇形喷火，以及双子魔眼系技能（激光炮、五连快速冲撞、高速魔焰喷火）
+- 完善怪物技能系统：补充多人目标、扇形/直线预警、原版冰阵/火阵、统一怪物技能CD倍率配置
+- 多轮优化技能表现与平衡：地刺、落雷、喷火、双子魔眼技能的距离、数量、预警、视觉与伤害逻辑已整体打磨
+- 修复关键问题：双子魔眼技能作用域报错、运行时报错、prefab依赖崩溃、喷火技能串线、激光炮破坏建筑等问题
+
+2026-04-02 概要
+- 新增怪物技能词条第一批与第二批：喷吐、震击、冲撞、飞扑
+- 新增怪物玩家词条扩展：攻击距离、攻击速度、刺猬，并加入对应配置开关
+- 将5个Boss独有词条同步开放给精英怪，并补充独立配置开关
+- 新增真近战附魔石、复合普通附魔石，开放生命附魔石随机获取，并调整黄昏增伤附魔石为可重复附魔
+
 v0.35 (2026-03-27)
 - 新增配置开关：可控制生命附魔石是否进入正常随机池
 - 默认开启生命附魔石随机获取
@@ -88,7 +55,7 @@ v0.26 (2026-03-23)
 - 优化击杀判定：仅玩家或玩家召唤物（随从）击杀才计入保底计数
 ]]
 author = "老斑鸠"
-version = "0.53"
+version = "1.04"
 
 api_version = 10
 dst_compatible = true
@@ -429,9 +396,72 @@ configuration_options = {
 
     MakeSection("怪物技能与词条", "怪物技能词条、玩家词条扩展与特殊下放"),
     {
+        name = "monster_skill_cd_mult_common",
+        label = "怪物技能CD倍率：普通怪",
+        hover = "统一调整普通怪所有技能词条的冷却时间倍率；当前默认1.0x，数值越大冷却越久",
+        options = {
+            {description = "0.5x", data = 0.5},
+            {description = "0.75x", data = 0.75},
+            {description = "1.0x(默认)", data = 1.0},
+            {description = "1.25x", data = 1.25},
+            {description = "1.5x", data = 1.5},
+            {description = "2.0x", data = 2.0},
+            {description = "3.0x", data = 3.0},
+            {description = "4.0x", data = 4.0},
+            {description = "5.0x", data = 5.0},
+            {description = "6.0x", data = 6.0},
+            {description = "7.0x", data = 7.0},
+            {description = "8.0x", data = 8.0},
+            {description = "9.0x", data = 9.0},
+            {description = "10.0x", data = 10.0}
+        },
+        default = 1.0
+    }, {
+        name = "monster_skill_cd_mult_elite",
+        label = "怪物技能CD倍率：精英怪",
+        hover = "统一调整精英怪所有技能词条的冷却时间倍率；当前默认1.0x，数值越大冷却越久",
+        options = {
+            {description = "0.5x", data = 0.5},
+            {description = "0.75x", data = 0.75},
+            {description = "1.0x(默认)", data = 1.0},
+            {description = "1.25x", data = 1.25},
+            {description = "1.5x", data = 1.5},
+            {description = "2.0x", data = 2.0},
+            {description = "3.0x", data = 3.0},
+            {description = "4.0x", data = 4.0},
+            {description = "5.0x", data = 5.0},
+            {description = "6.0x", data = 6.0},
+            {description = "7.0x", data = 7.0},
+            {description = "8.0x", data = 8.0},
+            {description = "9.0x", data = 9.0},
+            {description = "10.0x", data = 10.0}
+        },
+        default = 1.0
+    }, {
+        name = "monster_skill_cd_mult_boss",
+        label = "怪物技能CD倍率：Boss",
+        hover = "统一调整Boss所有技能词条的冷却时间倍率；当前默认1.0x，数值越大冷却越久",
+        options = {
+            {description = "0.5x", data = 0.5},
+            {description = "0.75x", data = 0.75},
+            {description = "1.0x(默认)", data = 1.0},
+            {description = "1.25x", data = 1.25},
+            {description = "1.5x", data = 1.5},
+            {description = "2.0x", data = 2.0},
+            {description = "3.0x", data = 3.0},
+            {description = "4.0x", data = 4.0},
+            {description = "5.0x", data = 5.0},
+            {description = "6.0x", data = 6.0},
+            {description = "7.0x", data = 7.0},
+            {description = "8.0x", data = 8.0},
+            {description = "9.0x", data = 9.0},
+            {description = "10.0x", data = 10.0}
+        },
+        default = 1.0
+    }, {
         name = "enable_monster_spit_skill",
         label = "怪物技能词条：喷吐",
-        hover = "开启后，符合条件的怪物可随机获得喷吐类技能词条",
+        hover = "开启后，符合条件的怪物可随机获得喷吐类技能词条；概率/冷却：普通30%/8秒，精英38%/6秒，Boss45%/4秒",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}
@@ -440,7 +470,7 @@ configuration_options = {
     }, {
         name = "enable_monster_shockwave_skill",
         label = "怪物技能词条：震击",
-        hover = "开启后，符合条件的大型战怪可随机获得范围震击词条",
+        hover = "开启后，符合条件的大型战怪可随机获得范围震击词条；概率/冷却：普通22%/10秒，精英28%/8秒，Boss34%/6秒",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}
@@ -449,7 +479,7 @@ configuration_options = {
     }, {
         name = "enable_monster_charge_skill",
         label = "怪物技能词条：冲撞",
-        hover = "开启后，符合条件的大型战怪可随机获得冲撞技能词条",
+        hover = "开启后，符合条件的大型战怪可随机获得冲撞技能词条；概率/冷却：普通18%/12秒，精英24%/10秒，Boss30%/8秒",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}
@@ -458,7 +488,88 @@ configuration_options = {
     }, {
         name = "enable_monster_pounce_skill",
         label = "怪物技能词条：飞扑",
-        hover = "开启后，符合条件的战怪可随机获得飞扑技能词条",
+        hover = "开启后，符合条件的战怪可随机获得飞扑技能词条；概率/冷却：普通16%/10秒，精英22%/8秒，Boss28%/6秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_barrage_skill",
+        label = "怪物技能词条：连发弹幕",
+        hover = "开启后，符合条件的怪物可随机获得连发弹幕词条；概率/冷却：普通16%/14秒，精英22%/12秒，Boss28%/10秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_trap_skill",
+        label = "怪物技能词条：地刺陷阱",
+        hover = "开启后，符合条件的怪物可随机获得地刺陷阱词条；概率/冷却：普通16%/14秒，精英22%/12秒，Boss28%/10秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_bolt_skill",
+        label = "怪物技能词条：落雷",
+        hover = "开启后，符合条件的怪物可随机获得落雷定点技能词条；概率/冷却：普通14%/16秒，精英20%/13秒，Boss26%/10秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_freeze_ring_skill",
+        label = "怪物技能词条：冰环",
+        hover = "开启后，符合条件的怪物可随机获得冰环冻结技能词条；概率/冷却：普通14%/15秒，精英20%/12秒，Boss26%/9秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_fire_ring_skill",
+        label = "怪物技能词条：火阵",
+        hover = "开启后，符合条件的怪物可随机获得火阵燃烧技能词条；概率/冷却：普通14%/15秒，精英20%/12秒，Boss26%/9秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_flame_cone_skill",
+        label = "怪物技能词条：扇形喷火",
+        hover = "开启后，符合条件的怪物可随机获得前方扇形喷火技能词条；当前仅精英/Boss可用，概率/冷却：精英20%/11秒，Boss26%/8秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_twin_laser_skill",
+        label = "魔眼技能词条：激光炮",
+        hover = "开启后，精英怪与Boss可随机获得双子魔眼风格的激光炮技能词条；概率/冷却：精英16%/16秒，Boss22%/12秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_twin_dash_skill",
+        label = "魔眼技能词条：五连冲撞",
+        hover = "开启后，精英怪与Boss可随机获得双子魔眼风格的五连快速冲撞技能词条；概率/冷却：精英18%/17秒，Boss24%/13秒",
+        options = {
+            {description = "开启", data = true},
+            {description = "关闭", data = false}
+        },
+        default = true
+    }, {
+        name = "enable_monster_twin_hellfire_skill",
+        label = "魔眼技能词条：高速魔焰喷火",
+        hover = "开启后，精英怪与Boss可随机获得双子魔眼风格的高速魔焰喷火技能词条；概率/冷却：精英18%/15秒，Boss24%/11秒",
         options = {
             {description = "开启", data = true},
             {description = "关闭", data = false}
