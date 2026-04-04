@@ -164,6 +164,10 @@ local TWIN_HELLFIRE_PARAMS = {
     boss = { cooldown = 11, proc = 0.24, min_range = 4, max_range = 17, windup = 1.5, duration = 1.55, tick = 0.06, reach = 14.5, half_angle = 50, damage_mult = 1.1, fire_damage = 8, ignite_chance = 1.0 },
 }
 
+local THINK_MIN_INTERVAL = 0.4
+local THINK_MAX_INTERVAL = 0.6
+local THINK_MAX_GROUPS_PER_ROUND = 3
+
 local SKILL_TARGET_MUST_TAGS = { "_combat", "_health" }
 local SKILL_TARGET_CANT_TAGS = { "INLIMBO", "flight", "invisible", "notarget", "noattack", "playerghost", "wall" }
 local SKILL_TARGET_ONEOF_TAGS = { "character", "monster", "animal", "shadowminion" }
@@ -523,6 +527,54 @@ local function IsValidSkillTarget(inst, target)
     return IsValidBaseTarget(inst, target)
 end
 
+local function IsValidSkillCaster(inst)
+    return inst ~= nil
+        and inst:IsValid()
+        and not inst:IsInLimbo()
+        and HasComponents(inst, "health")
+        and not inst.components.health:IsDead()
+        and (inst.sg == nil or not inst.sg:HasStateTag("dead"))
+end
+
+local function CleanupMonsterSkillTasks(inst)
+    if inst == nil then
+        return
+    end
+
+    local task_keys = {
+        "_hh_monster_skill_think_start_task",
+        "_hh_monster_skill_think_task",
+        "_hh_monster_skill_barrage_task",
+        "_hh_monster_skill_pursuit_task",
+        "_hh_monster_skill_trap_task",
+        "_hh_monster_skill_bolt_task",
+        "_hh_monster_skill_freeze_ring_task",
+        "_hh_monster_skill_fire_ring_task",
+        "_hh_monster_skill_flame_cone_task",
+        "_hh_monster_skill_twin_laser_task",
+        "_hh_monster_skill_twin_dash_task",
+        "_hh_monster_skill_twin_hellfire_task",
+    }
+
+    for _, key in ipairs(task_keys) do
+        local task = inst[key]
+        if task ~= nil then
+            task:Cancel()
+            inst[key] = nil
+        end
+    end
+
+    if inst._hh_monster_skill_doattack ~= nil then
+        inst:RemoveEventCallback("doattack", inst._hh_monster_skill_doattack)
+        inst._hh_monster_skill_doattack = nil
+    end
+
+    if inst._hh_monster_skill_onhit ~= nil then
+        inst:RemoveEventCallback("onhitother", inst._hh_monster_skill_onhit)
+        inst._hh_monster_skill_onhit = nil
+    end
+end
+
 local function GetTrapTargets(inst, primary_target, params)
     local targets = {}
     local seen = {}
@@ -775,7 +827,7 @@ local function SpawnTwinHellfireFx(attacker, offset_angle, dist, scale)
 end
 
 local function SpawnFlameConeWarning(attacker, fixed_rotation, params, remove_time)
-    if attacker == nil or not attacker:IsValid() then
+    if not IsValidSkillCaster(attacker) then
         return
     end
 
@@ -807,7 +859,7 @@ local function SpawnFlameConeWarning(attacker, fixed_rotation, params, remove_ti
 end
 
 local function SpawnLineWarning(attacker, fixed_rotation, reach, remove_time, color, scale, step)
-    if attacker == nil or not attacker:IsValid() then
+    if not IsValidSkillCaster(attacker) then
         return
     end
 
@@ -849,7 +901,7 @@ local function SpawnTwinLaserAtPos(attacker, x, z, damage_mult, scale, targets)
 end
 
 local function DoTwinLaserShot(attacker, params, fixed_rotation)
-    if attacker == nil or not attacker:IsValid() then
+    if not IsValidSkillCaster(attacker) then
         return
     end
 
@@ -866,7 +918,7 @@ local function DoTwinLaserShot(attacker, params, fixed_rotation)
 end
 
 local function StartTwinDashSequence(attacker, target, params, remaining)
-    if attacker == nil or not attacker:IsValid() or remaining <= 0 then
+    if not IsValidSkillCaster(attacker) or remaining <= 0 then
         return
     end
     if target == nil or not target:IsValid() then
@@ -920,7 +972,7 @@ local function StartTwinDashSequence(attacker, target, params, remaining)
         if dash_task ~= nil then
             dash_task:Cancel()
         end
-        if runner ~= nil and runner:IsValid() then
+        if IsValidSkillCaster(runner) then
             runner.components.locomotor:EnableGroundSpeedMultiplier(true)
             ClearVelocityOverride(runner)
             if remaining > 1 then
@@ -933,7 +985,7 @@ local function StartTwinDashSequence(attacker, target, params, remaining)
 end
 
 local function DoFlameConeTick(attacker, params, fixed_rotation, hit_targets)
-    if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") then
+    if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
         return
     end
 
@@ -1175,6 +1227,13 @@ AddPrefabPostInitAny(function(inst)
         return
     end
     MarkSkillCandidate(inst)
+    if inst._hh_monster_skill_cleanup_on_death == nil then
+        inst._hh_monster_skill_cleanup_on_death = function(monster)
+            CleanupMonsterSkillTasks(monster)
+        end
+        inst:ListenForEvent("death", inst._hh_monster_skill_cleanup_on_death)
+        inst:ListenForEvent("onremove", inst._hh_monster_skill_cleanup_on_death)
+    end
 end)
 
 local function TryUseSpitSkill(self, target)
@@ -1211,7 +1270,7 @@ local function TryUseSpitSkill(self, target)
 
     local captured_target = target
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") or IsHardBlockedForSkill(attacker) then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") or IsHardBlockedForSkill(attacker) then
             return
         end
         if not IsValidSpitTarget(attacker, captured_target) then
@@ -1265,7 +1324,7 @@ local function TryUseBarrageSkill(self, target)
     local angle_offsets = GetAngleOffsets(params.count, params.spread_angle or 10)
     for i = 1, params.count do
         inst:DoTaskInTime((i - 1) * params.interval, function(attacker)
-            if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") then
+            if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
                 return
             end
             if not IsValidSpitTarget(attacker, captured_target) then
@@ -1355,7 +1414,7 @@ local function TryUseTrapSkill(self, target)
     end
 
     inst:DoTaskInTime(params.delay, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
             return
         end
 
@@ -1420,7 +1479,7 @@ local function TryUseBoltSkill(self, target)
             end
 
             inst:DoTaskInTime(params.delay, function(attacker)
-                if attacker == nil or not attacker:IsValid() or TheWorld == nil then
+                if not IsValidSkillCaster(attacker) or TheWorld == nil then
                     return
                 end
 
@@ -1508,7 +1567,7 @@ local function TryUseFreezeRingSkill(self, target)
         SpawnTimedIndicator(strike_pos, params.delay, { 0.55, 0.85, 1, 1 }, params.warning_scale or 1)
 
         inst:DoTaskInTime(params.delay, function(attacker)
-            if attacker == nil or not attacker:IsValid() then
+            if not IsValidSkillCaster(attacker) then
                 return
             end
             SpawnFreezeCircleAtPos(strike_pos, params.duration)
@@ -1581,7 +1640,7 @@ local function TryUseFireRingSkill(self, target)
         SpawnTimedIndicator(strike_pos, params.delay, { 1, 0.45, 0.15, 1 }, params.warning_scale or 1)
 
         inst:DoTaskInTime(params.delay, function(attacker)
-            if attacker == nil or not attacker:IsValid() then
+            if not IsValidSkillCaster(attacker) then
                 return
             end
             SpawnFireCircleAtPos(strike_pos, params.duration)
@@ -1650,7 +1709,7 @@ local function TryUseFlameConeSkill(self, target)
     SpawnFlameConeWarning(inst, fixed_rotation, params, params.windup)
 
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
             return
         end
 
@@ -1658,7 +1717,14 @@ local function TryUseFlameConeSkill(self, target)
         local hit_targets = {}
         DoFlameConeTick(attacker, params, fixed_rotation, hit_targets)
 
-        local flame_task = attacker:DoPeriodicTask(params.tick, function(flame_attacker)
+        local flame_task
+        flame_task = attacker:DoPeriodicTask(params.tick, function(flame_attacker)
+            if not IsValidSkillCaster(flame_attacker) then
+                if flame_task ~= nil then
+                    flame_task:Cancel()
+                end
+                return
+            end
             DoFlameConeTick(flame_attacker, params, fixed_rotation, hit_targets)
         end)
 
@@ -1727,7 +1793,7 @@ local function TryUseTwinLaserSkill(self, target)
     inst:FacePoint(tx, ty, tz)
 
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() then
+        if not IsValidSkillCaster(attacker) then
             return
         end
         attacker:FacePoint(tx, ty, tz)
@@ -1789,7 +1855,7 @@ local function TryUseTwinDashSkill(self, target)
 
     local captured_target = target
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat", "locomotor") then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat", "locomotor") then
             return
         end
         StartTwinDashSequence(attacker, captured_target, params, params.count)
@@ -1849,7 +1915,7 @@ local function TryUseTwinHellfireSkill(self, target)
     SpawnFlameConeWarning(inst, fixed_rotation, params, params.windup)
 
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
             return
         end
 
@@ -1857,7 +1923,14 @@ local function TryUseTwinHellfireSkill(self, target)
         local hit_targets = {}
         DoTwinHellfireTick(attacker, params, fixed_rotation, hit_targets)
 
-        local flame_task = attacker:DoPeriodicTask(params.tick, function(flame_attacker)
+        local flame_task
+        flame_task = attacker:DoPeriodicTask(params.tick, function(flame_attacker)
+            if not IsValidSkillCaster(flame_attacker) then
+                if flame_task ~= nil then
+                    flame_task:Cancel()
+                end
+                return
+            end
             DoTwinHellfireTick(flame_attacker, params, fixed_rotation, hit_targets)
         end)
 
@@ -1917,7 +1990,7 @@ local function TryUseShockwaveSkill(self, target)
     SpawnSkillIndicator(inst:GetPosition(), math.max(params.radius / 3, 1), { 1, 0.75, 0.35, 1 })
 
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
             return
         end
 
@@ -1982,7 +2055,7 @@ local function TryUseChargeSkill(self, target)
 
     local captured_target = target
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or not HasComponents(attacker, "combat") or attacker.Physics == nil then
+        if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") or attacker.Physics == nil then
             return
         end
         if not IsValidSkillTarget(attacker, captured_target) then
@@ -2016,7 +2089,7 @@ local function TryUseChargeSkill(self, target)
             if dash_task ~= nil then
                 dash_task:Cancel()
             end
-            if runner ~= nil and runner:IsValid() then
+            if IsValidSkillCaster(runner) then
                 runner.components.locomotor:EnableGroundSpeedMultiplier(true)
                 ClearVelocityOverride(runner)
             end
@@ -2060,7 +2133,7 @@ local function TryUsePounceSkill(self, target)
 
     local captured_target = target
     inst:DoTaskInTime(params.windup, function(attacker)
-        if attacker == nil or not attacker:IsValid() or attacker.Physics == nil or not HasComponents(attacker, "locomotor") then
+        if not IsValidSkillCaster(attacker) or attacker.Physics == nil or not HasComponents(attacker, "locomotor") then
             return
         end
         if not IsValidSkillTarget(attacker, captured_target) then
@@ -2121,6 +2194,8 @@ local function TryUseMonsterSkill(self, target)
         or TheWorld == nil
         or not TheWorld.ismastersim
         or not HasComponents(inst, "combat")
+        or not IsValidSkillCaster(inst)
+        or IsHardBlockedForSkill(inst)
     then
         return false
     end
@@ -2139,6 +2214,7 @@ local function TryUsePursuitSkills(self, target)
         or TheWorld == nil
         or not TheWorld.ismastersim
         or not HasComponents(inst, "combat", "locomotor")
+        or not IsValidSkillCaster(inst)
         or IsHardBlockedForSkill(inst)
     then
         return false
@@ -2162,6 +2238,176 @@ local function TryUsePursuitSkills(self, target)
     end
 
     return false
+end
+
+local function HasEnabledThinkSkills()
+    return ENABLE_BARRAGE_SKILL
+        or ENABLE_CHARGE_SKILL
+        or ENABLE_POUNCE_SKILL
+        or ENABLE_TRAP_SKILL
+        or ENABLE_BOLT_SKILL
+        or ENABLE_FREEZE_RING_SKILL
+        or ENABLE_FIRE_RING_SKILL
+        or ENABLE_FLAME_CONE_SKILL
+        or ENABLE_TWIN_LASER_SKILL
+        or ENABLE_TWIN_DASH_SKILL
+        or ENABLE_TWIN_HELLFIRE_SKILL
+end
+
+local function HasAnyThinkSkillEffect(self)
+    if self == nil or self.GetEffectValueByKey == nil then
+        return false
+    end
+
+    return (ENABLE_BARRAGE_SKILL and self:GetEffectValueByKey(BARRAGE_EFFECT_KEY) > 0)
+        or ((ENABLE_CHARGE_SKILL or ENABLE_POUNCE_SKILL) and (
+            self:GetEffectValueByKey(CHARGE_EFFECT_KEY) > 0
+            or self:GetEffectValueByKey(POUNCE_EFFECT_KEY) > 0
+        ))
+        or (ENABLE_TRAP_SKILL and self:GetEffectValueByKey(TRAP_EFFECT_KEY) > 0)
+        or (ENABLE_BOLT_SKILL and self:GetEffectValueByKey(BOLT_EFFECT_KEY) > 0)
+        or (ENABLE_FREEZE_RING_SKILL and self:GetEffectValueByKey(FREEZE_RING_EFFECT_KEY) > 0)
+        or (ENABLE_FIRE_RING_SKILL and self:GetEffectValueByKey(FIRE_RING_EFFECT_KEY) > 0)
+        or (ENABLE_FLAME_CONE_SKILL and self:GetEffectValueByKey(FLAME_CONE_EFFECT_KEY) > 0)
+        or (ENABLE_TWIN_LASER_SKILL and self:GetEffectValueByKey(TWIN_LASER_EFFECT_KEY) > 0)
+        or (ENABLE_TWIN_DASH_SKILL and self:GetEffectValueByKey(TWIN_DASH_EFFECT_KEY) > 0)
+        or (ENABLE_TWIN_HELLFIRE_SKILL and self:GetEffectValueByKey(TWIN_HELLFIRE_EFFECT_KEY) > 0)
+end
+
+local function GetMonsterSkillThinkInterval(inst)
+    if inst == nil then
+        return THINK_MIN_INTERVAL
+    end
+
+    if type(inst._hh_monster_skill_think_interval) ~= "number" then
+        inst._hh_monster_skill_think_interval = THINK_MIN_INTERVAL
+            + math.random() * (THINK_MAX_INTERVAL - THINK_MIN_INTERVAL)
+    end
+
+    return inst._hh_monster_skill_think_interval
+end
+
+local function TryUseRangedBurstSkills(self, target)
+    if TryUseBarrageByAggro(self, target) then
+        return true
+    end
+
+    if TryUseBoltByAggro(self, target) then
+        return true
+    end
+
+    if TryUseTwinLaserByAggro(self, target) then
+        return true
+    end
+
+    return false
+end
+
+local function TryUseZoneSkills(self, target)
+    if TryUseTrapSkill(self, target) then
+        return true
+    end
+
+    if TryUseFreezeRingByAggro(self, target) then
+        return true
+    end
+
+    if TryUseFireRingByAggro(self, target) then
+        return true
+    end
+
+    if TryUseFlameConeByAggro(self, target) then
+        return true
+    end
+
+    if TryUseTwinHellfireByAggro(self, target) then
+        return true
+    end
+
+    return false
+end
+
+local function TryUseMobilitySkills(self, target)
+    if TryUsePursuitSkills(self, target) then
+        return true
+    end
+
+    if TryUseTwinDashByAggro(self, target) then
+        return true
+    end
+
+    return false
+end
+
+local function TryUseSkillThink(self)
+    local inst = self ~= nil and self.inst or nil
+    if inst == nil
+        or TheWorld == nil
+        or not TheWorld.ismastersim
+        or not HasComponents(inst, "combat")
+        or not IsValidSkillCaster(inst)
+        or IsHardBlockedForSkill(inst)
+        or not HasAnyThinkSkillEffect(self)
+    then
+        return false
+    end
+
+    local target = inst.components.combat.target
+    if not IsValidBaseTarget(inst, target) or not target:HasTag("player") then
+        return false
+    end
+
+    local groups
+    if IsOutsideNormalAttackRange(inst, target) then
+        groups = {
+            TryUseMobilitySkills,
+            TryUseRangedBurstSkills,
+            TryUseZoneSkills,
+        }
+    else
+        groups = {
+            TryUseZoneSkills,
+            TryUseMobilitySkills,
+            TryUseRangedBurstSkills,
+        }
+    end
+
+    local max_groups = math.min(THINK_MAX_GROUPS_PER_ROUND, #groups)
+    for i = 1, max_groups do
+        if groups[i](self, target) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function StartMonsterSkillThinkTask(inst)
+    if inst == nil
+        or inst._hh_monster_skill_think_task ~= nil
+        or inst._hh_monster_skill_think_start_task ~= nil
+        or not HasEnabledThinkSkills()
+    then
+        return
+    end
+
+    local interval = GetMonsterSkillThinkInterval(inst)
+    local initial_delay = math.random() * interval
+    inst._hh_monster_skill_think_start_task = inst:DoTaskInTime(initial_delay, function(monster)
+        if monster == nil then
+            return
+        end
+        monster._hh_monster_skill_think_start_task = nil
+        if not monster:IsValid() or monster._hh_monster_skill_think_task ~= nil then
+            return
+        end
+
+        monster._hh_monster_skill_think_task = monster:DoPeriodicTask(interval, function(monster_)
+            if monster_ ~= nil and monster_.components ~= nil and monster_.components.hh_monster ~= nil then
+                TryUseSkillThink(monster_.components.hh_monster)
+            end
+        end)
+    end)
 end
 
 local SKILL_BUFFS = {
@@ -2456,6 +2702,7 @@ AddComponentPostInit("hh_monster", function(self, inst)
     end
 
     MarkSkillCandidate(inst)
+    StartMonsterSkillThinkTask(inst)
 
     if ENABLE_SPIT_SKILL and inst._hh_monster_skill_doattack == nil then
         inst._hh_monster_skill_doattack = function(monster, data)
@@ -2465,22 +2712,6 @@ AddComponentPostInit("hh_monster", function(self, inst)
             end
         end
         inst:ListenForEvent("doattack", inst._hh_monster_skill_doattack)
-    end
-
-    if ENABLE_BARRAGE_SKILL and inst._hh_monster_skill_barrage_task == nil then
-        inst._hh_monster_skill_barrage_task = inst:DoPeriodicTask(0.2, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseBarrageByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if (ENABLE_CHARGE_SKILL or ENABLE_POUNCE_SKILL) and inst._hh_monster_skill_pursuit_task == nil then
-        inst._hh_monster_skill_pursuit_task = inst:DoPeriodicTask(0.2, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUsePursuitSkills(inst_.components.hh_monster)
-            end
-        end)
     end
 
     if ENABLE_SHOCKWAVE_SKILL and inst._hh_monster_skill_onhit == nil then
@@ -2493,71 +2724,6 @@ AddComponentPostInit("hh_monster", function(self, inst)
             end
         end
         inst:ListenForEvent("onhitother", inst._hh_monster_skill_onhit)
-    end
-
-    if ENABLE_TRAP_SKILL and inst._hh_monster_skill_trap_task == nil then
-        inst._hh_monster_skill_trap_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                local target = inst_.components.combat ~= nil and inst_.components.combat.target or nil
-                TryUseTrapSkill(inst_.components.hh_monster, target)
-            end
-        end)
-    end
-
-    if ENABLE_BOLT_SKILL and inst._hh_monster_skill_bolt_task == nil then
-        inst._hh_monster_skill_bolt_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseBoltByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if ENABLE_FREEZE_RING_SKILL and inst._hh_monster_skill_freeze_ring_task == nil then
-        inst._hh_monster_skill_freeze_ring_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseFreezeRingByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if ENABLE_FIRE_RING_SKILL and inst._hh_monster_skill_fire_ring_task == nil then
-        inst._hh_monster_skill_fire_ring_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseFireRingByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if ENABLE_FLAME_CONE_SKILL and inst._hh_monster_skill_flame_cone_task == nil then
-        inst._hh_monster_skill_flame_cone_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseFlameConeByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if ENABLE_TWIN_LASER_SKILL and inst._hh_monster_skill_twin_laser_task == nil then
-        inst._hh_monster_skill_twin_laser_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseTwinLaserByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if ENABLE_TWIN_DASH_SKILL and inst._hh_monster_skill_twin_dash_task == nil then
-        inst._hh_monster_skill_twin_dash_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseTwinDashByAggro(inst_.components.hh_monster)
-            end
-        end)
-    end
-
-    if ENABLE_TWIN_HELLFIRE_SKILL and inst._hh_monster_skill_twin_hellfire_task == nil then
-        inst._hh_monster_skill_twin_hellfire_task = inst:DoPeriodicTask(0.25, function(inst_)
-            if inst_ ~= nil and inst_.components ~= nil and inst_.components.hh_monster ~= nil then
-                TryUseTwinHellfireByAggro(inst_.components.hh_monster)
-            end
-        end)
     end
 end)
 

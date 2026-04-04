@@ -4,6 +4,7 @@
     功能：自定义精英怪和Boss的极品附魔石、装备包裹掉落概率
     
     配置项：
+    - player_gem_drop_rate: 宝石/特殊道具掉率（默认0.01）
     - elite_stone_drop_rate: 精英极品附魔石掉率（默认0.05）
     - elite_gif_drop_rate: 精英装备包裹掉率（默认0.01）
     - boss_stone_drop_rate: Boss极品附魔石掉率（默认0.2）
@@ -11,6 +12,7 @@
 ]]--
 
 -- 获取配置
+local player_gem_rate = GetModConfigData("player_gem_drop_rate") or 0.05
 local elite_stone_rate = GetModConfigData("elite_stone_drop_rate") or 0.05
 local elite_gif_rate = GetModConfigData("elite_gif_drop_rate") or 0.01
 local boss_stone_rate = GetModConfigData("boss_stone_drop_rate") or 0.2
@@ -59,6 +61,9 @@ local function updateDropRateConfig()
     if not TUNING[HH_CHANCE_CONFIG][GIF_CHANCE] then
         TUNING[HH_CHANCE_CONFIG][GIF_CHANCE] = {}
     end
+
+    -- 修改宝石/特殊道具掉率
+    TUNING[HH_CHANCE_CONFIG][GIF_CHANCE].player_gem_chance = player_gem_rate
     
     -- 修改极品附魔石掉率
     TUNING[HH_CHANCE_CONFIG][GIF_CHANCE].elite_monster_stone = elite_stone_rate
@@ -71,6 +76,8 @@ local function updateDropRateConfig()
     -- 更新概率表UI显示（必须在CHANCE_TEXT被计算之前执行）
     updateChanceText()
     
+    print(string.format("[附魔补丁] 宝石/特殊道具掉率:%.1f%%",
+        player_gem_rate * 100))
     print(string.format("[附魔补丁] 极品附魔石掉率 - 精英:%.1f%% Boss:%.1f%%", 
         elite_stone_rate * 100, boss_stone_rate * 100))
     print(string.format("[附魔补丁] 装备包裹掉率 - 精英:%.1f%% Boss:%.1f%%", 

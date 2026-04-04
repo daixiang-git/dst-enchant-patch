@@ -34,6 +34,10 @@ GLOBAL.GemWORMWOOD = GetModConfigData("ENABLE_WORMWOOD") or false
 GLOBAL.enable_new_effect = GetModConfigData("enable_new_effect") or false
 GLOBAL.EnableTrueMeleeEnchantStone = GetModConfigData("enable_true_melee_enchant_stone") ~= false
 GLOBAL.EnableCompoundCommonImmunityStones = GetModConfigData("enable_compound_common_immunity_stones") ~= false
+GLOBAL.EnableMediumHasteEnchantStone = GetModConfigData("enable_medium_haste_enchant_stone") ~= false
+GLOBAL.EnableRareSlideEnchantStone = GetModConfigData("enable_rare_slide_enchant_stone") ~= false
+GLOBAL.EnableAttackRangeGem = GetModConfigData("enable_attack_range_gem") ~= false
+GLOBAL.EnableGemConvert = GetModConfigData("enable_gem_convert") ~= false
 GLOBAL.EnableMonsterSpitSkill = GetModConfigData("enable_monster_spit_skill") ~= false
 GLOBAL.EnableMonsterShockwaveSkill = GetModConfigData("enable_monster_shockwave_skill") ~= false
 GLOBAL.EnableMonsterChargeSkill = GetModConfigData("enable_monster_charge_skill") ~= false
@@ -88,6 +92,27 @@ end
 if GLOBAL.EnableCompoundCommonImmunityStones then
     print("复合普通附魔石已激活")
     modimport("postinit/compound_common_immunity_stones.lua")
+end
+
+if GLOBAL.UnknownTagEnabled then
+    modimport("postinit/stride_bead_patch.lua")
+    modimport("postinit/medium_speed_enchant.lua")
+    if GLOBAL.EnableMediumHasteEnchantStone then
+        modimport("postinit/medium_haste_enchant.lua")
+    end
+    if GLOBAL.EnableRareSlideEnchantStone then
+        modimport("postinit/rare_slide_enchant.lua")
+    end
+    if GLOBAL.EnableAttackRangeGem then
+        modimport("postinit/attack_range_gem.lua")
+    end
+end
+
+if GLOBAL.UnknownTagEnabled then
+    modimport("postinit/gem_level_system.lua")
+    if GLOBAL.EnableGemConvert then
+        modimport("postinit/gem_convert_ui.lua")
+    end
 end
 
 if GLOBAL.EnableMonsterSpitSkill or GLOBAL.EnableMonsterShockwaveSkill or GLOBAL.EnableMonsterChargeSkill or GLOBAL.EnableMonsterPounceSkill or GLOBAL.EnableMonsterBarrageSkill or GLOBAL.EnableMonsterTrapSkill or GLOBAL.EnableMonsterBoltSkill or GLOBAL.EnableMonsterFreezeRingSkill or GLOBAL.EnableMonsterFireRingSkill or GLOBAL.EnableMonsterFlameConeSkill or GLOBAL.EnableMonsterTwinLaserSkill or GLOBAL.EnableMonsterTwinDashSkill or GLOBAL.EnableMonsterTwinHellfireSkill then
