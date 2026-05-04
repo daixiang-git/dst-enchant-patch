@@ -11,6 +11,7 @@ local ENABLE_FLAME_CONE_SKILL = GetModConfigData("enable_monster_flame_cone_skil
 local ENABLE_TWIN_LASER_SKILL = GetModConfigData("enable_monster_twin_laser_skill") ~= false
 local ENABLE_TWIN_DASH_SKILL = GetModConfigData("enable_monster_twin_dash_skill") ~= false
 local ENABLE_TWIN_HELLFIRE_SKILL = GetModConfigData("enable_monster_twin_hellfire_skill") ~= false
+local ENABLE_SKILL_STATUS_DISPLAY = GetModConfigData("enable_monster_skill_status_display") ~= false
 local COMMON_SKILL_CD_MULT = GetModConfigData("monster_skill_cd_mult_common") or 1
 local ELITE_SKILL_CD_MULT = GetModConfigData("monster_skill_cd_mult_elite") or 1
 local BOSS_SKILL_CD_MULT = GetModConfigData("monster_skill_cd_mult_boss") or 1
@@ -135,15 +136,15 @@ local FREEZE_RING_PARAMS = {
 }
 
 local FIRE_RING_PARAMS = {
-    common = { cooldown = 15, proc = 0.14, min_range = 5, max_range = 16, delay = 1.2, warning_scale = 1.0, duration = 4 },
-    elite = { cooldown = 12, proc = 0.20, min_range = 5, max_range = 18, delay = 1.05, warning_scale = 1.15, duration = 4 },
-    boss = { cooldown = 9, proc = 0.26, min_range = 5, max_range = 20, delay = 0.9, warning_scale = 1.3, duration = 4 },
+    common = { cooldown = 15, proc = 0.14, min_range = 5, max_range = 16, delay = 1.2, warning_scale = 1.0, duration = 4, radius = 2.8, tick = 0.5 },
+    elite = { cooldown = 12, proc = 0.20, min_range = 5, max_range = 18, delay = 1.05, warning_scale = 1.15, duration = 4, radius = 3.2, tick = 0.45 },
+    boss = { cooldown = 9, proc = 0.26, min_range = 5, max_range = 20, delay = 0.9, warning_scale = 1.3, duration = 4, radius = 3.6, tick = 0.4 },
 }
 
 local FLAME_CONE_PARAMS = {
     common = nil,
-    elite = { cooldown = 11, proc = 0.20, min_range = 3, max_range = 12, windup = 1.5, duration = 1.05, tick = 0.16, reach = 9.5, half_angle = 34, damage_mult = 0.7, fire_damage = 4, ignite_chance = 0.5 },
-    boss = { cooldown = 8, proc = 0.26, min_range = 3, max_range = 14, windup = 1.5, duration = 1.2, tick = 0.14, reach = 11, half_angle = 40, damage_mult = 0.85, fire_damage = 5, ignite_chance = 0.65 },
+    elite = { cooldown = 11, proc = 0.20, min_range = 3, max_range = 12, windup = 1.5, duration = 1.8, tick = 0.18, reach = 11.5, half_angle = 40, damage_mult = 0.7, fire_damage = 4, ignite_chance = 0.5, visual_tick = 8 * FRAMES },
+    boss = { cooldown = 8, proc = 0.26, min_range = 3, max_range = 14, windup = 1.5, duration = 2.1, tick = 0.16, reach = 13, half_angle = 48, damage_mult = 0.85, fire_damage = 5, ignite_chance = 0.65, visual_tick = 8 * FRAMES },
 }
 
 local TWIN_LASER_PARAMS = {
@@ -154,23 +155,40 @@ local TWIN_LASER_PARAMS = {
 
 local TWIN_DASH_PARAMS = {
     common = nil,
-    elite = { cooldown = 17, proc = 0.18, min_range = 5, max_range = 20, windup = 1.5, count = 5, dash_duration = 0.28, dash_gap = 0.04, speed = 34, hit_radius = 2.4, damage_mult = 0.9 },
-    boss = { cooldown = 13, proc = 0.24, min_range = 5, max_range = 24, windup = 1.5, count = 5, dash_duration = 0.32, dash_gap = 0.03, speed = 38, hit_radius = 2.9, damage_mult = 1.05 },
+    elite = { cooldown = 17, proc = 0.18, min_range = 5, max_range = 20, windup = 1.5, count = 5, dash_duration = 0.48, dash_gap = 0.12, speed = 20, hit_radius = 1.75, hit_offset = 1.25, damage_mult = 0.9 },
+    boss = { cooldown = 13, proc = 0.24, min_range = 5, max_range = 24, windup = 1.5, count = 5, dash_duration = 0.53, dash_gap = 0.1, speed = 22, hit_radius = 1.75, hit_offset = 1.25, damage_mult = 1.05 },
 }
 
 local TWIN_HELLFIRE_PARAMS = {
     common = nil,
-    elite = { cooldown = 15, proc = 0.18, min_range = 4, max_range = 15, windup = 1.5, duration = 1.35, tick = 0.08, reach = 12.5, half_angle = 44, damage_mult = 0.95, fire_damage = 6, ignite_chance = 0.85 },
-    boss = { cooldown = 11, proc = 0.24, min_range = 4, max_range = 17, windup = 1.5, duration = 1.55, tick = 0.06, reach = 14.5, half_angle = 50, damage_mult = 1.1, fire_damage = 8, ignite_chance = 1.0 },
+    elite = { cooldown = 15, proc = 0.18, min_range = 4, max_range = 15, windup = 1.5, duration = 2.2, tick = 0.18, reach = 14, half_angle = 44, damage_mult = 0.95, fire_damage = 6, ignite_chance = 0.85, visual_tick = 8 * FRAMES },
+    boss = { cooldown = 11, proc = 0.24, min_range = 4, max_range = 17, windup = 1.5, duration = 2.5, tick = 0.16, reach = 16, half_angle = 50, damage_mult = 1.1, fire_damage = 8, ignite_chance = 1.0, visual_tick = 8 * FRAMES },
 }
 
 local THINK_MIN_INTERVAL = 0.4
 local THINK_MAX_INTERVAL = 0.6
 local THINK_MAX_GROUPS_PER_ROUND = 3
+local SKILL_STATUS_PREFAB = "hh_treasure_text"
 
 local SKILL_TARGET_MUST_TAGS = { "_combat", "_health" }
 local SKILL_TARGET_CANT_TAGS = { "INLIMBO", "flight", "invisible", "notarget", "noattack", "playerghost", "wall" }
 local SKILL_TARGET_ONEOF_TAGS = { "character", "monster", "animal", "shadowminion" }
+
+local SKILL_STATUS_SPECS = {
+    { enabled = ENABLE_SPIT_SKILL, effect_key = SPIT_EFFECT_KEY, cd_field = "hh_skill_spit_cd", display = "喷吐" },
+    { enabled = ENABLE_SHOCKWAVE_SKILL, effect_key = SHOCKWAVE_EFFECT_KEY, cd_field = "hh_skill_shockwave_cd", display = "震击" },
+    { enabled = ENABLE_CHARGE_SKILL, effect_key = CHARGE_EFFECT_KEY, cd_field = "hh_skill_charge_cd", display = "冲撞" },
+    { enabled = ENABLE_POUNCE_SKILL, effect_key = POUNCE_EFFECT_KEY, cd_field = "hh_skill_pounce_cd", display = "飞扑" },
+    { enabled = ENABLE_BARRAGE_SKILL, effect_key = BARRAGE_EFFECT_KEY, cd_field = "hh_skill_barrage_cd", display = "弹幕" },
+    { enabled = ENABLE_TRAP_SKILL, effect_key = TRAP_EFFECT_KEY, cd_field = "hh_skill_trap_cd", display = "地刺" },
+    { enabled = ENABLE_BOLT_SKILL, effect_key = BOLT_EFFECT_KEY, cd_field = "hh_skill_bolt_cd", display = "落雷" },
+    { enabled = ENABLE_FREEZE_RING_SKILL, effect_key = FREEZE_RING_EFFECT_KEY, cd_field = "hh_skill_freeze_ring_cd", display = "冰环" },
+    { enabled = ENABLE_FIRE_RING_SKILL, effect_key = FIRE_RING_EFFECT_KEY, cd_field = "hh_skill_fire_ring_cd", display = "火阵" },
+    { enabled = ENABLE_FLAME_CONE_SKILL, effect_key = FLAME_CONE_EFFECT_KEY, cd_field = "hh_skill_flame_cone_cd", display = "喷火" },
+    { enabled = ENABLE_TWIN_LASER_SKILL, effect_key = TWIN_LASER_EFFECT_KEY, cd_field = "hh_skill_twin_laser_cd", display = "激光炮" },
+    { enabled = ENABLE_TWIN_DASH_SKILL, effect_key = TWIN_DASH_EFFECT_KEY, cd_field = "hh_skill_twin_dash_cd", display = "五连冲撞" },
+    { enabled = ENABLE_TWIN_HELLFIRE_SKILL, effect_key = TWIN_HELLFIRE_EFFECT_KEY, cd_field = "hh_skill_twin_hellfire_cd", display = "魔焰" },
+}
 
 local function HasComponents(inst, ...)
     if inst == nil or inst.components == nil then
@@ -681,6 +699,248 @@ local function IsHardBlockedForSkill(inst)
         or inst.sg:HasAnyStateTag("dead", "frozen", "jumping", "sleeping")
 end
 
+local function HasAnySkillStatusEffect(self)
+    if not ENABLE_SKILL_STATUS_DISPLAY then
+        return false
+    end
+
+    if self == nil or self.GetEffectValueByKey == nil then
+        return false
+    end
+
+    for _, spec in ipairs(SKILL_STATUS_SPECS) do
+        if spec.enabled and self:GetEffectValueByKey(spec.effect_key) > 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function BuildSkillStatusText(inst, self)
+    if inst == nil
+        or self == nil
+        or self.GetEffectValueByKey == nil
+        or (inst.components ~= nil and inst.components.health ~= nil and inst.components.health:IsDead())
+    then
+        return nil
+    end
+
+    local now = GetTime()
+    local lines = {}
+
+    for _, spec in ipairs(SKILL_STATUS_SPECS) do
+        if spec.enabled and self:GetEffectValueByKey(spec.effect_key) > 0 then
+            local cd_end = inst[spec.cd_field]
+            local remain = type(cd_end) == "number" and math.max(cd_end - now, 0) or 0
+            local state = remain <= 0 and "可用" or "不可用"
+            lines[#lines + 1] = string.format("%s:%s", spec.display, state)
+        end
+    end
+
+    if #lines <= 0 then
+        return nil
+    end
+
+    return table.concat(lines, "\n")
+end
+
+local function RemoveSkillStatusLabel(inst)
+    if inst == nil then
+        return
+    end
+
+    if inst._hh_skill_status_refresh_task ~= nil then
+        inst._hh_skill_status_refresh_task:Cancel()
+        inst._hh_skill_status_refresh_task = nil
+    end
+
+    if inst._hh_skill_status_label ~= nil then
+        if inst._hh_skill_status_label:IsValid() then
+            inst._hh_skill_status_label:Remove()
+        end
+        inst._hh_skill_status_label = nil
+    end
+end
+
+local function EnsureSkillStatusLabel(inst)
+    if not ENABLE_SKILL_STATUS_DISPLAY then
+        return nil
+    end
+
+    if inst == nil
+        or not inst:IsValid()
+        or TheWorld == nil
+        or not TheWorld.ismastersim
+    then
+        return nil
+    end
+
+    if inst._hh_skill_status_label ~= nil and inst._hh_skill_status_label:IsValid() then
+        return inst._hh_skill_status_label
+    end
+
+    local label = SpawnPrefab(SKILL_STATUS_PREFAB)
+    if label == nil then
+        return nil
+    end
+
+    if label.entity ~= nil and inst.entity ~= nil then
+        label.entity:SetParent(inst.entity)
+    end
+
+    inst._hh_skill_status_label = label
+    return label
+end
+
+local function GetSkillStatusOffsetY(inst)
+    if inst == nil or not inst:IsValid() then
+        return 2
+    end
+
+    if type(inst._hh_skill_status_offset_y) == "number" then
+        return inst._hh_skill_status_offset_y
+    end
+
+    local radius = inst.GetPhysicsRadius ~= nil and inst:GetPhysicsRadius(0) or 0.5
+    local offset_y = 2 + math.max(radius, 0.2) * 1.6
+
+    if inst:HasTag("largecreature") then
+        offset_y = offset_y + 0.45
+    end
+    if inst:HasTag("epic") then
+        offset_y = offset_y + 0.65
+    end
+
+    offset_y = math.max(2.4, math.min(offset_y, 6.6))
+    inst._hh_skill_status_offset_y = offset_y
+    return offset_y
+end
+
+local function PushSkillStatusText(inst, text)
+    if not ENABLE_SKILL_STATUS_DISPLAY then
+        RemoveSkillStatusLabel(inst)
+        return
+    end
+
+    if inst == nil or not inst:IsValid() then
+        return
+    end
+
+    if text == nil or text == "" then
+        if inst._hh_skill_status_label ~= nil then
+            if inst._hh_skill_status_label:IsValid() then
+                inst._hh_skill_status_label:Remove()
+            end
+            inst._hh_skill_status_label = nil
+        end
+        return
+    end
+
+    local label = EnsureSkillStatusLabel(inst)
+    if label ~= nil and label.SetTreasureStr ~= nil and HH_UTILS ~= nil and HH_UTILS.TableToStr ~= nil then
+        local offset_y = GetSkillStatusOffsetY(inst)
+        label:SetTreasureStr(HH_UTILS:TableToStr({
+            name = text,
+            color = { 1, 230 / 255, 120 / 255 },
+            pos = { 0, offset_y, 0 },
+            scale = 13,
+        }))
+    end
+end
+
+local function GetNextSkillStatusRefreshDelay(inst, self)
+    if not ENABLE_SKILL_STATUS_DISPLAY then
+        return nil
+    end
+
+    if inst == nil or self == nil or self.GetEffectValueByKey == nil then
+        return nil
+    end
+
+    local now = GetTime()
+    local next_delay = nil
+
+    for _, spec in ipairs(SKILL_STATUS_SPECS) do
+        if spec.enabled and self:GetEffectValueByKey(spec.effect_key) > 0 then
+            local cd_end = inst[spec.cd_field]
+            if type(cd_end) == "number" and cd_end > now then
+                local delay = math.max(cd_end - now, 0.05)
+                if next_delay == nil or delay < next_delay then
+                    next_delay = delay
+                end
+            end
+        end
+    end
+
+    return next_delay
+end
+
+local RefreshSkillStatusLabel
+
+local function ScheduleSkillStatusRefresh(inst, self)
+    if not ENABLE_SKILL_STATUS_DISPLAY then
+        RemoveSkillStatusLabel(inst)
+        return
+    end
+
+    if inst == nil or not inst:IsValid() then
+        return
+    end
+
+    if inst._hh_skill_status_refresh_task ~= nil then
+        inst._hh_skill_status_refresh_task:Cancel()
+        inst._hh_skill_status_refresh_task = nil
+    end
+
+    local delay = GetNextSkillStatusRefreshDelay(inst, self)
+    if delay == nil then
+        return
+    end
+
+    inst._hh_skill_status_refresh_task = inst:DoTaskInTime(delay + 0.05, function(monster)
+        if monster ~= nil and monster:IsValid() and monster.components ~= nil and monster.components.hh_monster ~= nil then
+            RefreshSkillStatusLabel(monster, monster.components.hh_monster)
+        else
+            RemoveSkillStatusLabel(monster)
+        end
+    end)
+end
+
+RefreshSkillStatusLabel = function(inst, self)
+    if not ENABLE_SKILL_STATUS_DISPLAY then
+        RemoveSkillStatusLabel(inst)
+        return
+    end
+
+    if inst == nil or not inst:IsValid() then
+        return
+    end
+
+    local text = BuildSkillStatusText(inst, self)
+    if text == nil or text == "" then
+        PushSkillStatusText(inst, nil)
+        ScheduleSkillStatusRefresh(inst, self)
+        return
+    end
+
+    PushSkillStatusText(inst, text)
+    ScheduleSkillStatusRefresh(inst, self)
+end
+
+local function ActivateSkillEffect(inst, effect_key)
+    if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
+        inst.components.hh_monster:AddEffectValueByKey(effect_key, 1)
+        RefreshSkillStatusLabel(inst, inst.components.hh_monster)
+    end
+end
+
+local function OnSkillCooldownStateChanged(inst)
+    if inst ~= nil and inst:IsValid() and inst.components ~= nil and inst.components.hh_monster ~= nil then
+        RefreshSkillStatusLabel(inst, inst.components.hh_monster)
+    end
+end
+
 local function SpawnSkillIndicator(pos, scale, color)
     if pos ~= nil and HH_UTILS ~= nil and HH_UTILS.SpawnIndicatorFx ~= nil then
         HH_UTILS:SpawnIndicatorFx(pos, scale or 1, color or { 1, 1, 1, 1 }, 1)
@@ -708,6 +968,26 @@ local function SpawnGroundTrailFx(inst)
     local fx = SpawnPrefab("dirt_puff")
     if fx ~= nil and fx.Transform ~= nil then
         fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+    end
+end
+
+local function SpawnTwinDashTrailFx(inst)
+    if inst == nil or not inst:IsValid() or TheWorld == nil or TheWorld.Map == nil then
+        return
+    end
+
+    if not TheWorld.Map:IsVisualGroundAtPoint(inst.Transform:GetWorldPosition()) then
+        local fx = SpawnPrefab("boss_ripple_fx")
+        if fx ~= nil and fx.Transform ~= nil then
+            fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+        end
+        return
+    end
+
+    local fx = SpawnPrefab("slide_puff")
+    if fx ~= nil and fx.Transform ~= nil then
+        fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+        fx.Transform:SetScale(1.3, 1.3, 1.3)
     end
 end
 
@@ -767,6 +1047,51 @@ local function SpawnFireCircleAtPos(pos, duration)
     return spell
 end
 
+local function SpawnSafeFireRingAtPos(attacker, pos, params)
+    if attacker == nil or not attacker:IsValid() or pos == nil then
+        return nil
+    end
+
+    local duration = params.duration or 4
+    local tick = params.tick or 0.5
+    local radius = params.radius or 3
+
+    SpawnTimedIndicator(pos, duration, { 1, 0.45, 0.15, 1 }, (params.warning_scale or 1) * 1.15)
+
+    local controller = CreateEntity()
+    controller.entity:AddTransform()
+    controller.persists = false
+    controller.Transform:SetPosition(pos:Get())
+
+    local function DoRingDamage()
+        if not IsValidSkillCaster(attacker) then
+            return
+        end
+
+        local x, y, z = controller.Transform:GetWorldPosition()
+        local ents = TheSim:FindEntities(x, y, z, radius, SKILL_TARGET_MUST_TAGS, SKILL_TARGET_CANT_TAGS, SKILL_TARGET_ONEOF_TAGS)
+        for _, ent in ipairs(ents) do
+            if ent ~= attacker and IsValidSkillTarget(attacker, ent) then
+                ApplySkillDamage(attacker, ent, GetSkillDamage(attacker, params.damage_mult))
+                if ent.components.health ~= nil then
+                    ent.components.health:DoFireDamage(params.fire_damage or 0, attacker, true)
+                end
+            end
+        end
+    end
+
+    DoRingDamage()
+    local damage_task = controller:DoPeriodicTask(tick, DoRingDamage)
+    controller:DoTaskInTime(duration, function(inst_)
+        if damage_task ~= nil then
+            damage_task:Cancel()
+        end
+        inst_:Remove()
+    end)
+
+    return controller
+end
+
 local function AngleDiffDeg(a, b)
     local diff = a - b
     while diff > 180 do
@@ -805,8 +1130,83 @@ local function SpawnFlameConeFx(attacker, offset_angle, dist, scale)
     end
 end
 
+local BREATH_SEGMENT_BASE_DISTS = { 3, 5, 7, 9, 11, 13, 15 }
+
+local function GetBreathSegmentDistances(reach)
+    local result = {}
+    local max_reach = reach or 8
+    for _, dist in ipairs(BREATH_SEGMENT_BASE_DISTS) do
+        if dist <= max_reach + 0.5 then
+            table.insert(result, dist)
+        end
+    end
+    if #result <= 0 then
+        table.insert(result, math.max(2.5, max_reach * 0.6))
+    end
+    return result
+end
+
+local function GetMutatedWargBreathSegments(reach)
+    local result = {}
+    local max_reach = reach or 9
+    local base = { 3, 5, 7, 9 }
+    for _, dist in ipairs(base) do
+        if dist <= max_reach + 0.5 then
+            table.insert(result, dist)
+        end
+    end
+    if #result <= 0 then
+        table.insert(result, math.max(3, math.min(max_reach, 9)))
+    end
+    return result
+end
+
+local function GetFlameConeLaneOffsets(half_angle)
+    local angle = half_angle or 30
+    return { -angle * 0.65, -angle * 0.32, 0, angle * 0.32, angle * 0.65 }
+end
+
+local function GetPointAlongRotation(x, z, rotation_deg, dist)
+    local theta = rotation_deg * DEGREES
+    return x + math.cos(theta) * dist, z - math.sin(theta) * dist
+end
+
+local function SpawnMutatedWargBreathFx(attacker, rotation_deg, dist, reach, scale)
+    local fx = SpawnPrefab("warg_mutated_breath_fx")
+    if fx == nil or fx.Transform == nil then
+        if fx ~= nil and fx:IsValid() then
+            fx:Remove()
+        end
+        return
+    end
+
+    if fx.SetFXOwner ~= nil then
+        fx:SetFXOwner(attacker)
+    end
+
+    local x, y, z = attacker.Transform:GetWorldPosition()
+    local angle = rotation_deg * DEGREES
+    x = x + math.cos(angle) * dist
+    z = z - math.sin(angle) * dist
+
+    local jitter = math.max(dist / 20, 0.12)
+    local jitter_angle = math.random() * PI2
+    x = x + math.cos(jitter_angle) * jitter
+    z = z - math.sin(jitter_angle) * jitter
+    fx.Transform:SetPosition(x, 0, z)
+
+    local fx_scale = scale or (1.35 + math.min(dist, reach or dist) / math.max(reach or dist, 1) * 0.3)
+    local fadeoption = dist < 6 and "nofade" or (dist <= 7 and "latefade" or nil)
+    if fx.RestartFX ~= nil then
+        fx:RestartFX(fx_scale, fadeoption)
+    elseif fx.Transform ~= nil then
+        fx.Transform:SetScale(fx_scale, fx_scale, fx_scale)
+        fx:DoTaskInTime(0.3, fx.Remove)
+    end
+end
+
 local function SpawnTwinHellfireFx(attacker, offset_angle, dist, scale)
-    local fx = SpawnPrefab("eyeflame")
+    local fx = SpawnPrefab("warg_mutated_breath_fx")
     if fx == nil or fx.Transform == nil then
         if fx ~= nil and fx:IsValid() then
             fx:Remove()
@@ -818,12 +1218,73 @@ local function SpawnTwinHellfireFx(attacker, offset_angle, dist, scale)
     local angle = (attacker.Transform:GetRotation() + offset_angle) * DEGREES
     x = x + math.cos(angle) * dist
     z = z - math.sin(angle) * dist
+
+    local jitter = math.max(dist / 20, 0.12)
+    local jitter_angle = math.random() * PI2
+    x = x + math.cos(jitter_angle) * jitter
+    z = z - math.sin(jitter_angle) * jitter
     fx.Transform:SetPosition(x, 0, z)
-    if fx.Transform ~= nil then
-        local s = scale or 1.1
-        fx.Transform:SetScale(s, s, s)
+    if fx.SetFXOwner ~= nil then
+        fx:SetFXOwner(attacker)
     end
-    fx:DoTaskInTime(0.42, fx.Remove)
+
+    if fx.AnimState ~= nil then
+        fx.AnimState:SetMultColour(173 / 255, 1, 47 / 255, 0.8)
+        fx.AnimState:SetLightOverride(0.15)
+        fx.AnimState:SetBloomEffectHandle("shaders/anim.ksh")
+    end
+
+    local actual_scale = scale or ((1 + math.random() * 0.25) * (1 + dist / 6))
+    local fadeoption = (dist < 6 and "nofade") or (dist <= 7 and "latefade") or nil
+    if fx.RestartFX ~= nil then
+        fx:RestartFX(actual_scale, fadeoption)
+    elseif fx.Transform ~= nil then
+        fx.Transform:SetScale(actual_scale, actual_scale, actual_scale)
+        fx:DoTaskInTime(0.35, fx.Remove)
+    end
+end
+
+local function ScheduleTwinHellfireBurst(attacker, fixed_rotation, params)
+    if attacker == nil or not attacker:IsValid() then
+        return
+    end
+
+    local reach = params.reach or 8
+    local segments = {
+        { delay = 0 * FRAMES, dist = math.min(3, reach) },
+        { delay = 3 * FRAMES, dist = math.min(5, reach) },
+        { delay = 6 * FRAMES, dist = math.min(7, reach) },
+    }
+
+    for _, segment in ipairs(segments) do
+        attacker:DoTaskInTime(segment.delay, function(flame_attacker)
+            if flame_attacker == nil or not flame_attacker:IsValid() then
+                return
+            end
+
+            if flame_attacker.Transform ~= nil and type(fixed_rotation) == "number" then
+                flame_attacker.Transform:SetRotation(fixed_rotation)
+            end
+
+            local scale = (1 + math.random() * 0.25) * (1 + segment.dist / 6)
+            SpawnTwinHellfireFx(flame_attacker, 0, segment.dist, scale)
+        end)
+    end
+end
+
+local function ShouldSpawnVisualFx(attacker, key, interval)
+    if attacker == nil or key == nil then
+        return false
+    end
+
+    local now = GetTime()
+    local next_time = attacker[key]
+    if type(next_time) == "number" and next_time > now then
+        return false
+    end
+
+    attacker[key] = now + math.max(interval or 0, 0)
+    return true
 end
 
 local function SpawnFlameConeWarning(attacker, fixed_rotation, params, remove_time)
@@ -878,6 +1339,18 @@ local function SpawnLineWarning(attacker, fixed_rotation, reach, remove_time, co
     end
 end
 
+local function SpawnSegmentWarning(attacker, fixed_rotation, dists, remove_time, color, scale)
+    if not IsValidSkillCaster(attacker) or type(dists) ~= "table" then
+        return
+    end
+
+    local x, y, z = attacker.Transform:GetWorldPosition()
+    for _, dist in ipairs(dists) do
+        local px, pz = GetPointAlongRotation(x, z, fixed_rotation, dist)
+        SpawnTimedIndicator(Vector3(px, 0, pz), remove_time, color or { 1, 0.2, 0.2, 1 }, scale or 0.95)
+    end
+end
+
 local function SpawnTwinLaserAtPos(attacker, x, z, damage_mult, scale, targets)
     local laser = SpawnPrefab("alterguardian_laser")
     if laser == nil or laser.Transform == nil or laser.Trigger == nil then
@@ -893,6 +1366,9 @@ local function SpawnTwinLaserAtPos(attacker, x, z, damage_mult, scale, targets)
     laser.overridepdp = 1
 
     local skip_targets = targets or {}
+    if attacker ~= nil then
+        skip_targets[attacker] = true
+    end
     for _, ent in ipairs(TheSim:FindEntities(x, 0, z, 4, nil, nil, { "structure", "wall" })) do
         skip_targets[ent] = true
     end
@@ -908,7 +1384,7 @@ local function DoTwinLaserShot(attacker, params, fixed_rotation)
     local x, y, z = attacker.Transform:GetWorldPosition()
     local theta = fixed_rotation * DEGREES
     local shared_targets = {}
-    local dist = 1
+    local dist = 2
     while dist <= (params.reach or 16) do
         local px = x + math.cos(theta) * dist
         local pz = z - math.sin(theta) * dist
@@ -917,71 +1393,126 @@ local function DoTwinLaserShot(attacker, params, fixed_rotation)
     end
 end
 
+local TWIN_DASH_COLLISION_INTERVAL = 3 * FRAMES
+local TWIN_DASH_FX_INTERVAL = 5 * FRAMES
+
 local function StartTwinDashSequence(attacker, target, params, remaining)
     if not IsValidSkillCaster(attacker) or remaining <= 0 then
         return
     end
-    if target == nil or not target:IsValid() then
+
+    local dash_target = target
+    if dash_target == nil or not dash_target:IsValid() then
+        dash_target = HasComponents(attacker, "combat") and attacker.components.combat.target or nil
+    end
+    if dash_target == nil or not dash_target:IsValid() then
         return
     end
 
-    local tx, ty, tz = target.Transform:GetWorldPosition()
-    local target_point = { x = tx, z = tz }
+    local tx, ty, tz = dash_target.Transform:GetWorldPosition()
     attacker:FacePoint(tx, ty, tz)
 
     attacker.components.locomotor:Stop()
     attacker.components.locomotor:EnableGroundSpeedMultiplier(false)
 
+    if attacker._hh_monster_skill_twin_dash_task ~= nil then
+        attacker._hh_monster_skill_twin_dash_task:Cancel()
+        attacker._hh_monster_skill_twin_dash_task = nil
+    end
+
     local hit_targets = {}
-    local dash_task = attacker:DoPeriodicTask(0.05, function(runner)
-        local ix, iy, iz = runner.Transform:GetWorldPosition()
-        local dx = target_point.x - ix
-        local dz = target_point.z - iz
-        local len = math.sqrt(dx * dx + dz * dz)
-        if len <= 0.001 then
+    local collisiontime = 0
+    local fxtime = 0
+    local theta = attacker.Transform:GetRotation() * DEGREES
+    local dash_step = (params.speed or 22) * FRAMES
+    local dash_task = attacker:DoPeriodicTask(FRAMES, function(runner)
+        if not IsValidSkillCaster(runner) then
+            if dash_task ~= nil then
+                dash_task:Cancel()
+            end
             return
         end
 
-        local move = math.min(params.speed * 0.05, len)
-        if move <= 0 then
-            return
-        end
-
-        local nx = ix + dx / len * move
-        local nz = iz + dz / len * move
-
+        local x, y, z = runner.Transform:GetWorldPosition()
+        local nx = x + math.cos(theta) * dash_step
+        local nz = z - math.sin(theta) * dash_step
         if runner.Physics ~= nil then
             runner.Physics:Teleport(nx, 0, nz)
         else
             runner.Transform:SetPosition(nx, 0, nz)
         end
-        runner:FacePoint(target_point.x, 0, target_point.z)
+        runner.Transform:SetRotation(theta * RADIANS)
 
-        local x, y, z = runner.Transform:GetWorldPosition()
-        local ents = TheSim:FindEntities(x, y, z, params.hit_radius, SKILL_TARGET_MUST_TAGS, SKILL_TARGET_CANT_TAGS, SKILL_TARGET_ONEOF_TAGS)
-        for _, ent in ipairs(ents) do
-            if ent ~= runner and not hit_targets[ent] and IsValidSkillTarget(runner, ent) then
-                hit_targets[ent] = true
-                ApplySkillDamage(runner, ent, GetSkillDamage(runner, params.damage_mult))
+        if collisiontime <= 0 then
+            x, y, z = runner.Transform:GetWorldPosition()
+            local offset = params.hit_offset or math.max(3 - (params.hit_radius or 1.75), 0.8)
+            x = x + math.cos(theta) * offset
+            z = z - math.sin(theta) * offset
+
+            local ents = TheSim:FindEntities(x, y, z, params.hit_radius, SKILL_TARGET_MUST_TAGS, SKILL_TARGET_CANT_TAGS, SKILL_TARGET_ONEOF_TAGS)
+            for _, ent in ipairs(ents) do
+                if ent ~= runner and ent:IsValid() and not hit_targets[ent] and IsValidSkillTarget(runner, ent) then
+                    hit_targets[ent] = true
+                    ApplySkillDamage(runner, ent, GetSkillDamage(runner, params.damage_mult))
+                end
             end
+
+            collisiontime = TWIN_DASH_COLLISION_INTERVAL
         end
-        SpawnGroundTrailFx(runner)
+        collisiontime = collisiontime - FRAMES
+
+        if fxtime <= 0 then
+            SpawnTwinDashTrailFx(runner)
+            fxtime = TWIN_DASH_FX_INTERVAL
+        end
+        fxtime = fxtime - FRAMES
     end)
+    attacker._hh_monster_skill_twin_dash_task = dash_task
 
     attacker:DoTaskInTime(params.dash_duration, function(runner)
         if dash_task ~= nil then
             dash_task:Cancel()
+        end
+        if runner ~= nil then
+            runner._hh_monster_skill_twin_dash_task = nil
         end
         if IsValidSkillCaster(runner) then
             runner.components.locomotor:EnableGroundSpeedMultiplier(true)
             ClearVelocityOverride(runner)
             if remaining > 1 then
                 runner:DoTaskInTime(params.dash_gap, function(next_runner)
-                    StartTwinDashSequence(next_runner, target, params, remaining - 1)
+                    local next_target = dash_target
+                    if next_target == nil or not next_target:IsValid() then
+                        next_target = HasComponents(next_runner, "combat") and next_runner.components.combat.target or nil
+                    end
+                    StartTwinDashSequence(next_runner, next_target, params, remaining - 1)
                 end)
             end
         end
     end)
+end
+
+local function ApplyBreathSegmentDamage(attacker, seg_x, seg_z, radius, hit_targets, hit_interval, damage_mult, fire_damage, ignite_chance)
+    local ents = TheSim:FindEntities(seg_x, 0, seg_z, radius + 3, SKILL_TARGET_MUST_TAGS, SKILL_TARGET_CANT_TAGS, SKILL_TARGET_ONEOF_TAGS)
+    local now = GetTime()
+    for _, ent in ipairs(ents) do
+        if ent ~= attacker and IsValidSkillTarget(attacker, ent) then
+            local range = radius + (ent.GetPhysicsRadius ~= nil and ent:GetPhysicsRadius(0) or 0)
+            if ent:GetDistanceSqToPoint(seg_x, 0, seg_z) <= range * range then
+                local last_hit = hit_targets[ent]
+                if last_hit == nil or now - last_hit >= hit_interval then
+                    hit_targets[ent] = now
+                    ApplySkillDamage(attacker, ent, GetSkillDamage(attacker, damage_mult))
+                    if ent.components.health ~= nil then
+                        ent.components.health:DoFireDamage(fire_damage or 0, attacker, true)
+                    end
+                    if ent.components.burnable ~= nil and not ent.components.burnable:IsBurning() and math.random() <= (ignite_chance or 0.4) then
+                        ent.components.burnable:Ignite(true, attacker, attacker)
+                    end
+                end
+            end
+        end
+    end
 end
 
 local function DoFlameConeTick(attacker, params, fixed_rotation, hit_targets)
@@ -990,36 +1521,25 @@ local function DoFlameConeTick(attacker, params, fixed_rotation, hit_targets)
     end
 
     local x, y, z = attacker.Transform:GetWorldPosition()
-    local ents = TheSim:FindEntities(x, y, z, (params.reach or 8) + 2, SKILL_TARGET_MUST_TAGS, SKILL_TARGET_CANT_TAGS, SKILL_TARGET_ONEOF_TAGS)
-    local now = GetTime()
-    for _, ent in ipairs(ents) do
-        if ent ~= attacker and IsValidSkillTarget(attacker, ent) then
-            local dist_sq = ent:GetDistanceSqToPoint(x, 0, z)
-            if dist_sq <= (params.reach or 8) * (params.reach or 8) then
-                local angle_to = attacker:GetAngleToPoint(ent.Transform:GetWorldPosition())
-                local diff = math.abs(AngleDiffDeg(angle_to, fixed_rotation))
-                if diff <= (params.half_angle or 30) then
-                    local last_hit = hit_targets[ent]
-                    if last_hit == nil or now - last_hit >= math.max((params.tick or 0.15) * 0.9, 0.1) then
-                        hit_targets[ent] = now
-                        ApplySkillDamage(attacker, ent, GetSkillDamage(attacker, params.damage_mult))
-                        if ent.components.health ~= nil then
-                            ent.components.health:DoFireDamage(params.fire_damage or 0, attacker, true)
-                        end
-                        if ent.components.burnable ~= nil and not ent.components.burnable:IsBurning() and math.random() <= (params.ignite_chance or 0.4) then
-                            ent.components.burnable:Ignite(true, attacker, attacker)
-                        end
-                    end
-                end
-            end
+    local dists = GetMutatedWargBreathSegments(params.reach or 9)
+    local lane_offsets = GetFlameConeLaneOffsets(params.half_angle or 30)
+    local hit_interval = math.max((params.tick or 0.15) * 0.9, 0.1)
+    for _, lane_offset in ipairs(lane_offsets) do
+        local rotation = fixed_rotation + lane_offset
+        for _, dist in ipairs(dists) do
+            local seg_x, seg_z = GetPointAlongRotation(x, z, rotation, dist)
+            local scale = 1.2 + dist / math.max(params.reach or 8, 1) * 0.28
+            local radius = 0.9 * scale
+            ApplyBreathSegmentDamage(attacker, seg_x, seg_z, radius, hit_targets, hit_interval, params.damage_mult, params.fire_damage, params.ignite_chance)
         end
     end
 
-    local fx_angles = { -params.half_angle, -(params.half_angle or 30) * 0.45, 0, (params.half_angle or 30) * 0.45, params.half_angle }
-    local fx_dists = { (params.reach or 8) * 0.45, (params.reach or 8) * 0.62, (params.reach or 8) * 0.78 }
-    for _, dist in ipairs(fx_dists) do
-        for _, offset in ipairs(fx_angles) do
-            SpawnFlameConeFx(attacker, offset, dist, 1.15 + dist / math.max(params.reach or 8, 1) * 0.45)
+    if ShouldSpawnVisualFx(attacker, "_hh_skill_flame_cone_visual_cd", params.visual_tick or math.max(params.tick or 0.15, 10 * FRAMES)) then
+        for _, lane_offset in ipairs(lane_offsets) do
+            local rotation = fixed_rotation + lane_offset
+            for _, dist in ipairs(dists) do
+                SpawnMutatedWargBreathFx(attacker, rotation, dist, params.reach or 8, 1.2 + dist / math.max(params.reach or 8, 1) * 0.28)
+            end
         end
     end
 end
@@ -1030,37 +1550,18 @@ local function DoTwinHellfireTick(attacker, params, fixed_rotation, hit_targets)
     end
 
     local x, y, z = attacker.Transform:GetWorldPosition()
-    local ents = TheSim:FindEntities(x, y, z, (params.reach or 8) + 2, SKILL_TARGET_MUST_TAGS, SKILL_TARGET_CANT_TAGS, SKILL_TARGET_ONEOF_TAGS)
-    local now = GetTime()
-    for _, ent in ipairs(ents) do
-        if ent ~= attacker and IsValidSkillTarget(attacker, ent) then
-            local dist_sq = ent:GetDistanceSqToPoint(x, 0, z)
-            if dist_sq <= (params.reach or 8) * (params.reach or 8) then
-                local angle_to = attacker:GetAngleToPoint(ent.Transform:GetWorldPosition())
-                local diff = math.abs(AngleDiffDeg(angle_to, fixed_rotation))
-                if diff <= (params.half_angle or 30) then
-                    local last_hit = hit_targets[ent]
-                    if last_hit == nil or now - last_hit >= math.max((params.tick or 0.15) * 0.9, 0.05) then
-                        hit_targets[ent] = now
-                        ApplySkillDamage(attacker, ent, GetSkillDamage(attacker, params.damage_mult))
-                        if ent.components.health ~= nil then
-                            ent.components.health:DoFireDamage(params.fire_damage or 0, attacker, true)
-                        end
-                        if ent.components.burnable ~= nil and not ent.components.burnable:IsBurning() and math.random() <= (params.ignite_chance or 0.4) then
-                            ent.components.burnable:Ignite(true, attacker, attacker)
-                        end
-                    end
-                end
-            end
-        end
+    local current_rotation = attacker.Transform ~= nil and attacker.Transform:GetRotation() or fixed_rotation
+    local dists = { math.min(3, params.reach or 8), math.min(5, params.reach or 8), math.min(7, params.reach or 8) }
+    local hit_interval = math.max((params.tick or 0.15) * 0.9, 0.05)
+    for _, dist in ipairs(dists) do
+        local seg_x, seg_z = GetPointAlongRotation(x, z, current_rotation, dist)
+        local scale = (1 + math.random() * 0.25) * (1 + dist / 6)
+        local radius = 0.9 * scale
+        ApplyBreathSegmentDamage(attacker, seg_x, seg_z, radius, hit_targets, hit_interval, params.damage_mult, params.fire_damage, params.ignite_chance)
     end
 
-    local fx_angles = { -(params.half_angle or 30), -(params.half_angle or 30) * 0.55, -(params.half_angle or 30) * 0.2, 0, (params.half_angle or 30) * 0.2, (params.half_angle or 30) * 0.55, (params.half_angle or 30) }
-    local fx_dists = { (params.reach or 8) * 0.3, (params.reach or 8) * 0.5, (params.reach or 8) * 0.7, (params.reach or 8) * 0.88 }
-    for _, dist in ipairs(fx_dists) do
-        for _, offset in ipairs(fx_angles) do
-            SpawnTwinHellfireFx(attacker, offset, dist, 0.85 + dist / math.max(params.reach or 8, 1) * 0.55)
-        end
+    if ShouldSpawnVisualFx(attacker, "_hh_skill_twin_hellfire_visual_cd", params.visual_tick or math.max(params.tick or 0.15, 0.22)) then
+        ScheduleTwinHellfireBurst(attacker, current_rotation, params)
     end
 end
 
@@ -1230,6 +1731,7 @@ AddPrefabPostInitAny(function(inst)
     if inst._hh_monster_skill_cleanup_on_death == nil then
         inst._hh_monster_skill_cleanup_on_death = function(monster)
             CleanupMonsterSkillTasks(monster)
+            RemoveSkillStatusLabel(monster)
         end
         inst:ListenForEvent("death", inst._hh_monster_skill_cleanup_on_death)
         inst:ListenForEvent("onremove", inst._hh_monster_skill_cleanup_on_death)
@@ -1265,6 +1767,7 @@ local function TryUseSpitSkill(self, target)
     end
 
     inst.hh_skill_spit_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "喷吐")
     SpawnSkillIndicator(target:GetPosition(), 1.2, { 0.35, 0.85, 0.35, 1 })
 
@@ -1317,6 +1820,7 @@ local function TryUseBarrageSkill(self, target)
     end
 
     inst.hh_skill_barrage_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "弹幕")
     SpawnSkillIndicator(target:GetPosition(), 1.35, { 1, 0.6, 0.2, 1 })
 
@@ -1396,6 +1900,7 @@ local function TryUseTrapSkill(self, target)
     end
 
     inst.hh_skill_trap_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
 
     local trap_targets = GetTrapTargets(inst, target, params)
     if #trap_targets <= 0 then
@@ -1467,6 +1972,7 @@ local function TryUseBoltSkill(self, target)
     end
 
     inst.hh_skill_bolt_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "落雷")
 
     for _, bolt_target in ipairs(bolt_targets) do
@@ -1555,6 +2061,7 @@ local function TryUseFreezeRingSkill(self, target)
     end
 
     inst.hh_skill_freeze_ring_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "冰环")
 
     local freeze_targets = GetTrapTargets(inst, target, params)
@@ -1628,6 +2135,7 @@ local function TryUseFireRingSkill(self, target)
     end
 
     inst.hh_skill_fire_ring_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "火阵")
 
     local fire_targets = GetTrapTargets(inst, target, params)
@@ -1640,7 +2148,7 @@ local function TryUseFireRingSkill(self, target)
         SpawnTimedIndicator(strike_pos, params.delay, { 1, 0.45, 0.15, 1 }, params.warning_scale or 1)
 
         inst:DoTaskInTime(params.delay, function(attacker)
-            if not IsValidSkillCaster(attacker) then
+            if attacker == nil or not attacker:IsValid() then
                 return
             end
             SpawnFireCircleAtPos(strike_pos, params.duration)
@@ -1701,12 +2209,16 @@ local function TryUseFlameConeSkill(self, target)
     end
 
     inst.hh_skill_flame_cone_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "喷火")
 
     local tx, ty, tz = target.Transform:GetWorldPosition()
     local fixed_rotation = inst:GetAngleToPoint(tx, ty, tz)
     inst:FacePoint(tx, ty, tz)
-    SpawnFlameConeWarning(inst, fixed_rotation, params, params.windup)
+    local warning_dists = GetMutatedWargBreathSegments(params.reach or 9)
+    for _, lane_offset in ipairs(GetFlameConeLaneOffsets(params.half_angle or 30)) do
+        SpawnSegmentWarning(inst, fixed_rotation + lane_offset, warning_dists, params.windup, { 1, 0.32, 0.08, 1 }, 1.0)
+    end
 
     inst:DoTaskInTime(params.windup, function(attacker)
         if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
@@ -1716,6 +2228,11 @@ local function TryUseFlameConeSkill(self, target)
         attacker:FacePoint(tx, ty, tz)
         local hit_targets = {}
         DoFlameConeTick(attacker, params, fixed_rotation, hit_targets)
+
+        if attacker._hh_monster_skill_flame_cone_task ~= nil then
+            attacker._hh_monster_skill_flame_cone_task:Cancel()
+            attacker._hh_monster_skill_flame_cone_task = nil
+        end
 
         local flame_task
         flame_task = attacker:DoPeriodicTask(params.tick, function(flame_attacker)
@@ -1727,10 +2244,14 @@ local function TryUseFlameConeSkill(self, target)
             end
             DoFlameConeTick(flame_attacker, params, fixed_rotation, hit_targets)
         end)
+        attacker._hh_monster_skill_flame_cone_task = flame_task
 
         attacker:DoTaskInTime(params.duration, function(flame_attacker)
             if flame_task ~= nil then
                 flame_task:Cancel()
+            end
+            if flame_attacker ~= nil then
+                flame_attacker._hh_monster_skill_flame_cone_task = nil
             end
         end)
     end)
@@ -1785,6 +2306,7 @@ local function TryUseTwinLaserSkill(self, target)
     end
 
     inst.hh_skill_twin_laser_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "激光炮")
 
     local tx, ty, tz = target.Transform:GetWorldPosition()
@@ -1850,6 +2372,7 @@ local function TryUseTwinDashSkill(self, target)
     end
 
     inst.hh_skill_twin_dash_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "五连冲撞")
     SpawnTimedIndicator(target:GetPosition(), params.windup, { 1, 0.4, 0.2, 1 }, 1.25)
 
@@ -1907,12 +2430,13 @@ local function TryUseTwinHellfireSkill(self, target)
     end
 
     inst.hh_skill_twin_hellfire_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "魔焰")
 
     local tx, ty, tz = target.Transform:GetWorldPosition()
     local fixed_rotation = inst:GetAngleToPoint(tx, ty, tz)
     inst:FacePoint(tx, ty, tz)
-    SpawnFlameConeWarning(inst, fixed_rotation, params, params.windup)
+    SpawnSegmentWarning(inst, fixed_rotation, { 3, 5, 7 }, params.windup, { 0.68, 1, 0.18, 1 }, 1.05)
 
     inst:DoTaskInTime(params.windup, function(attacker)
         if not IsValidSkillCaster(attacker) or not HasComponents(attacker, "combat") then
@@ -1922,6 +2446,11 @@ local function TryUseTwinHellfireSkill(self, target)
         attacker:FacePoint(tx, ty, tz)
         local hit_targets = {}
         DoTwinHellfireTick(attacker, params, fixed_rotation, hit_targets)
+
+        if attacker._hh_monster_skill_twin_hellfire_task ~= nil then
+            attacker._hh_monster_skill_twin_hellfire_task:Cancel()
+            attacker._hh_monster_skill_twin_hellfire_task = nil
+        end
 
         local flame_task
         flame_task = attacker:DoPeriodicTask(params.tick, function(flame_attacker)
@@ -1933,10 +2462,14 @@ local function TryUseTwinHellfireSkill(self, target)
             end
             DoTwinHellfireTick(flame_attacker, params, fixed_rotation, hit_targets)
         end)
+        attacker._hh_monster_skill_twin_hellfire_task = flame_task
 
         attacker:DoTaskInTime(params.duration, function(flame_attacker)
             if flame_task ~= nil then
                 flame_task:Cancel()
+            end
+            if flame_attacker ~= nil then
+                flame_attacker._hh_monster_skill_twin_hellfire_task = nil
             end
         end)
     end)
@@ -1986,6 +2519,7 @@ local function TryUseShockwaveSkill(self, target)
     end
 
     inst.hh_skill_shockwave_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "震击")
     SpawnSkillIndicator(inst:GetPosition(), math.max(params.radius / 3, 1), { 1, 0.75, 0.35, 1 })
 
@@ -2050,6 +2584,7 @@ local function TryUseChargeSkill(self, target)
     end
 
     inst.hh_skill_charge_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "冲撞")
     SpawnSkillIndicator(target:GetPosition(), 1.4, { 1, 0.45, 0.2, 1 })
 
@@ -2128,6 +2663,7 @@ local function TryUsePounceSkill(self, target)
     end
 
     inst.hh_skill_pounce_cd = GetTime() + GetSkillCooldown(params, inst)
+    OnSkillCooldownStateChanged(inst)
     SpawnSkillText(inst, "飞扑")
     SpawnSkillIndicator(target:GetPosition(), 1.25, { 0.8, 0.95, 1, 1 })
 
@@ -2426,9 +2962,7 @@ if ENABLE_SPIT_SKILL then
                 return inst ~= nil and inst:HasTag(SPIT_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(SPIT_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, SPIT_EFFECT_KEY)
             end,
         }
     end
@@ -2444,9 +2978,7 @@ if ENABLE_BARRAGE_SKILL then
                 return inst ~= nil and inst:HasTag(BARRAGE_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(BARRAGE_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, BARRAGE_EFFECT_KEY)
             end,
         }
     end
@@ -2462,9 +2994,7 @@ if ENABLE_TRAP_SKILL then
                 return inst ~= nil and inst:HasTag(TRAP_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(TRAP_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, TRAP_EFFECT_KEY)
             end,
         }
     end
@@ -2480,9 +3010,7 @@ if ENABLE_BOLT_SKILL then
                 return inst ~= nil and inst:HasTag(BOLT_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(BOLT_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, BOLT_EFFECT_KEY)
             end,
         }
     end
@@ -2498,9 +3026,7 @@ if ENABLE_FREEZE_RING_SKILL then
                 return inst ~= nil and inst:HasTag(FREEZE_RING_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(FREEZE_RING_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, FREEZE_RING_EFFECT_KEY)
             end,
         }
     end
@@ -2516,9 +3042,7 @@ if ENABLE_FIRE_RING_SKILL then
                 return inst ~= nil and inst:HasTag(FIRE_RING_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(FIRE_RING_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, FIRE_RING_EFFECT_KEY)
             end,
         }
     end
@@ -2535,9 +3059,7 @@ if ENABLE_FLAME_CONE_SKILL then
                 return inst ~= nil and inst:HasTag(FLAME_CONE_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(FLAME_CONE_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, FLAME_CONE_EFFECT_KEY)
             end,
         }
         end
@@ -2555,9 +3077,7 @@ if ENABLE_TWIN_LASER_SKILL then
                     return inst ~= nil and inst:HasTag(TWIN_LASER_CANDIDATE_TAG)
                 end,
                 start_fn = function(inst, value)
-                    if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                        inst.components.hh_monster:AddEffectValueByKey(TWIN_LASER_EFFECT_KEY, 1)
-                    end
+                    ActivateSkillEffect(inst, TWIN_LASER_EFFECT_KEY)
                 end,
             }
         end
@@ -2575,9 +3095,7 @@ if ENABLE_TWIN_DASH_SKILL then
                     return inst ~= nil and inst:HasTag(TWIN_DASH_CANDIDATE_TAG)
                 end,
                 start_fn = function(inst, value)
-                    if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                        inst.components.hh_monster:AddEffectValueByKey(TWIN_DASH_EFFECT_KEY, 1)
-                    end
+                    ActivateSkillEffect(inst, TWIN_DASH_EFFECT_KEY)
                 end,
             }
         end
@@ -2595,9 +3113,7 @@ if ENABLE_TWIN_HELLFIRE_SKILL then
                     return inst ~= nil and inst:HasTag(TWIN_HELLFIRE_CANDIDATE_TAG)
                 end,
                 start_fn = function(inst, value)
-                    if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                        inst.components.hh_monster:AddEffectValueByKey(TWIN_HELLFIRE_EFFECT_KEY, 1)
-                    end
+                    ActivateSkillEffect(inst, TWIN_HELLFIRE_EFFECT_KEY)
                 end,
             }
         end
@@ -2614,9 +3130,7 @@ if ENABLE_SHOCKWAVE_SKILL then
                 return inst ~= nil and inst:HasTag(SHOCKWAVE_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(SHOCKWAVE_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, SHOCKWAVE_EFFECT_KEY)
             end,
         }
     end
@@ -2632,9 +3146,7 @@ if ENABLE_CHARGE_SKILL then
                 return inst ~= nil and inst:HasTag(CHARGE_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(CHARGE_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, CHARGE_EFFECT_KEY)
             end,
         }
     end
@@ -2650,9 +3162,7 @@ if ENABLE_POUNCE_SKILL then
                 return inst ~= nil and inst:HasTag(POUNCE_CANDIDATE_TAG)
             end,
             start_fn = function(inst, value)
-                if inst ~= nil and inst:IsValid() and inst.components.hh_monster ~= nil then
-                    inst.components.hh_monster:AddEffectValueByKey(POUNCE_EFFECT_KEY, 1)
-                end
+                ActivateSkillEffect(inst, POUNCE_EFFECT_KEY)
             end,
         }
     end
@@ -2703,6 +3213,7 @@ AddComponentPostInit("hh_monster", function(self, inst)
 
     MarkSkillCandidate(inst)
     StartMonsterSkillThinkTask(inst)
+    RefreshSkillStatusLabel(inst, self)
 
     if ENABLE_SPIT_SKILL and inst._hh_monster_skill_doattack == nil then
         inst._hh_monster_skill_doattack = function(monster, data)

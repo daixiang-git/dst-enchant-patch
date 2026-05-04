@@ -208,7 +208,21 @@ function UpvalueHacker.SetUpvalue(start_fn, new_fn, ...)
 end
 
 -- 增强关系检测：骑乘+跟随
+local function HasPlayerRider(inst)
+    if inst == nil or inst.components == nil or inst.components.rideable == nil then
+        return false
+    end
+
+    local rider = inst.components.rideable:GetRider()
+    return rider ~= nil and rider:IsValid() and IsPlayer(rider)
+end
+
 local function CheckAttackRelationship(inst, target)
+    -- 1. 玩家骑乘的坐骑不能被当作“怪物对怪物”无效目标
+    if HasPlayerRider(inst) or HasPlayerRider(target) then
+        return true
+    end
+
     -- 2. 检测跟随关系（新增）
     local instLeader = inst.components and inst.components.follower and
                            inst.components.follower.leader

@@ -1,6 +1,6 @@
 ----
 --- 附魔限制
---- 武器攻击距离 > 2 时，禁止附魔
+--- 武器攻击距离 >= 3 时，禁止附魔
 ----
 
 local function IsLongRangeWeapon(inst)
@@ -20,7 +20,7 @@ local function IsLongRangeWeapon(inst)
         end
     end
 
-    return type(range) == "number" and range > 2
+    return type(range) == "number" and range >= 3
 end
 
 AddComponentPostInit("hh_equip", function(self)
@@ -32,10 +32,10 @@ AddComponentPostInit("hh_equip", function(self)
     local old_AddEquipBuff = self.AddEquipBuff
     self.AddEquipBuff = function(self, ...)
         if IsLongRangeWeapon(self.inst) then
-            return false, "攻击距离大于2的武器禁止附魔"
+            return false, "攻击距离大于等于3的武器禁止附魔"
         end
         return old_AddEquipBuff(self, ...)
     end
 end)
 
-print("[附魔补丁] 附魔限制已启用: 攻击距离>2的武器禁止附魔")
+print("[附魔补丁] 附魔限制已启用: 攻击距离>=3的武器禁止附魔")

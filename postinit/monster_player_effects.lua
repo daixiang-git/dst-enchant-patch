@@ -25,6 +25,7 @@ local NEW_EFFECT_KEYS = {
     "reflexiveInjuryByPercent",     -- 百分比反伤
     "targetPercentDamage",          -- 末世（目标当前血量百分比伤害）
     "immunePoison",                 -- 免疫中毒
+    "immuneLongRangeDamage",        -- 免疫远程伤害（按距离判定）
     "breakEquipOnHitChance",        -- 命中概率分解头部/身体装备
     "attackRangeBonus",             -- 攻击距离增加
     "attackSpeedPercent",           -- 攻击速度增加（减少攻击间隔）
@@ -128,6 +129,16 @@ local NEW_MONSTER_BUFFS = {
                 end
             end,
         },
+        patch_immuneLongRangeDamage = {
+            name = "免疫远程伤害",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("immuneLongRangeDamage", 1)
+                end
+            end,
+        },
     },
     -- ==================== 精英怪 ====================
     elite_monster = {
@@ -221,6 +232,16 @@ local NEW_MONSTER_BUFFS = {
                 end
             end,
         },
+        patch_immuneLongRangeDamage = {
+            name = "免疫远程伤害",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("immuneLongRangeDamage", 1)
+                end
+            end,
+        },
     },
     -- ==================== Boss ====================
     boss_monster = {
@@ -311,6 +332,16 @@ local NEW_MONSTER_BUFFS = {
             start_fn = function(inst, value)
                 if inst:IsValid() and inst.components.hh_monster then
                     inst.components.hh_monster:AddEffectValueByKey("immunePoison", 1)
+                end
+            end,
+        },
+        patch_immuneLongRangeDamage = {
+            name = "免疫远程伤害",
+            only_one = true,
+            rangeValue = { min = 1, max = 1 },
+            start_fn = function(inst, value)
+                if inst:IsValid() and inst.components.hh_monster then
+                    inst.components.hh_monster:AddEffectValueByKey("immuneLongRangeDamage", 1)
                 end
             end,
         },
@@ -539,6 +570,21 @@ local function GetMonsterTitle(inst)
     return "怪物"
 end
 
+local function IsLongRangeHit(attacker, target)
+    if attacker == nil or target == nil or not attacker:IsValid() or not target:IsValid() then
+        return false
+    end
+    if attacker.Transform == nil or target.Transform == nil then
+        return false
+    end
+
+    local ax, ay, az = attacker.Transform:GetWorldPosition()
+    local tx, ty, tz = target.Transform:GetWorldPosition()
+    local dx = ax - tx
+    local dz = az - tz
+    return (dx * dx + dz * dz) > 9
+end
+
 local function GetSlotLabel(slot)
     if slot == EQUIPSLOTS.HEAD then
         return "头部"
@@ -681,6 +727,10 @@ AddComponentPostInit("hh_monster", function(self, inst)
 
         if not attacker or not attacker:IsValid() then
             return amount
+        end
+
+        if amount > 0 and self:GetEffectValueByKey("immuneLongRangeDamage") > 0 and IsLongRangeHit(attacker, player) then
+            return 0
         end
 
         -- 固定反伤

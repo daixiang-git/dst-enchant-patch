@@ -6,6 +6,7 @@ HH_ITEMS = ITEM_OK and HH_ITEMS or {}
 local KEY_GEMS_LIST = "gems_list"
 local KEY_INST = "inst"
 local KEY_GEM_LEVEL_DATA = "gem_level_data"
+local KEY_LOADING_GEMS = "_patch_loading_gems"
 
 local function ShallowCopy(list)
     local result = {}
@@ -120,6 +121,16 @@ local NON_CONVERTIBLE_GEMS = {
     treasure_bj = true,
 }
 
+local TREASURE_CONVERTIBLE_GEMS = {
+    treasure_armor = true,
+    treasure_atk = true,
+    treasure_bj = true,
+}
+
+local function IsTreasureConvertibleGem(gem_name)
+    return TREASURE_CONVERTIBLE_GEMS[gem_name] == true
+end
+
 local function GetGemMaxLevel(gem_name, gem_data)
     gem_data = gem_data or GetGemData(gem_name)
     if gem_data == nil then
@@ -156,6 +167,9 @@ local function IsConvertibleGem(gem_name, gem_data)
     if gem_data == nil then
         return false
     end
+    if IsTreasureConvertibleGem(gem_name) then
+        return false
+    end
     if NON_CONVERTIBLE_GEMS[gem_name] then
         return false
     end
@@ -172,6 +186,21 @@ local function IsConvertibleGem(gem_name, gem_data)
         return false
     end
     return true
+end
+
+local function GetTreasureConvertibleGemPool(exclude_gem_name)
+    local pool = {}
+    if type(HH_GEM_BUFF_LIST) ~= "table" then
+        return pool
+    end
+
+    for gem_name in pairs(TREASURE_CONVERTIBLE_GEMS) do
+        if gem_name ~= exclude_gem_name and HH_GEM_BUFF_LIST[gem_name] ~= nil then
+            table.insert(pool, gem_name)
+        end
+    end
+
+    return pool
 end
 
 local function GetConvertibleGemPool(exclude_gem_name)
@@ -244,6 +273,104 @@ end
 local function RefreshOwnerAfterGemChange(owner)
     if owner ~= nil and owner:IsValid() then
         owner:PushEvent("handle_equip_to_player")
+    end
+end
+
+local function BuildGemLevelSnapshot(equip_cmp)
+    if equip_cmp == nil then
+        return nil
+    end
+
+    local gems_list = ShallowCopy(GetGemsList(equip_cmp))
+    local level_data = ShallowCopy(EnsureGemLevelData(equip_cmp))
+    return {
+        gems_list = gems_list,
+        level_data = level_data,
+    }
+end
+
+local function BuildInheritedGemLevels(snapshot, target_cmp)
+    local target_gems = GetGemsList(target_cmp)
+    local new_levels = {}
+    local source_gems = snapshot ~= nil and snapshot.gems_list or nil
+    local source_levels = snapshot ~= nil and snapshot.level_data or nil
+
+    if type(source_gems) ~= "table" or type(source_levels) ~= "table" then
+        for i = 1, #target_gems do
+            new_levels[i] = 1
+        end
+        return new_levels
+    end
+
+    local same_order = #source_gems == #target_gems
+    if same_order then
+        for i, gem_name in ipairs(target_gems) do
+            if source_gems[i] ~= gem_name then
+                same_order = false
+                break
+            end
+        end
+    end
+
+    if same_order then
+        for i = 1, #target_gems do
+            new_levels[i] = math.max(tonumber(source_levels[i]) or 1, 1)
+        end
+        return new_levels
+    end
+
+    local level_queues = {}
+    for i, gem_name in ipairs(source_gems) do
+        if type(gem_name) == "string" and gem_name ~= "" then
+            local queue = level_queues[gem_name]
+            if queue == nil then
+                queue = {}
+                level_queues[gem_name] = queue
+            end
+            table.insert(queue, math.max(tonumber(source_levels[i]) or 1, 1))
+        end
+    end
+
+    for i, gem_name in ipairs(target_gems) do
+        local queue = level_queues[gem_name]
+        if type(queue) == "table" and #queue > 0 then
+            new_levels[i] = table.remove(queue, 1)
+        else
+            new_levels[i] = 1
+        end
+    end
+
+    return new_levels
+end
+
+local function CopyGemLevelsForInheritedEquip(snapshot, target_cmp)
+    if snapshot == nil or target_cmp == nil then
+        return
+    end
+
+    local old_target_levels = ShallowCopy(EnsureGemLevelData(target_cmp))
+    target_cmp[KEY_GEM_LEVEL_DATA] = BuildInheritedGemLevels(snapshot, target_cmp)
+    local new_target_levels = EnsureGemLevelData(target_cmp)
+
+    local owner = GetEquippedOwner(target_cmp)
+    local changed = false
+    if owner ~= nil then
+        local gems_list = GetGemsList(target_cmp)
+        for i, gem_name in ipairs(gems_list) do
+            local old_level = tonumber(old_target_levels[i]) or 1
+            local new_level = tonumber(new_target_levels[i]) or 1
+            if new_level > old_level then
+                ApplyEquipLevelDelta(target_cmp, owner, gem_name, new_level - old_level, true)
+                changed = true
+            elseif new_level < old_level then
+                ApplyEquipLevelDelta(target_cmp, owner, gem_name, old_level - new_level, false)
+                changed = true
+            end
+        end
+    end
+
+    if changed then
+        RefreshOwnerAfterGemChange(owner)
     end
 end
 
@@ -323,6 +450,7 @@ AddComponentPostInit("hh_equip", function(self, inst)
     end
 
     self.AddNewGem = function(self, gem_name)
+        local is_loading = self[KEY_LOADING_GEMS] == true
         local old_len = #GetGemsList(self)
         if self:HasEmptyGroove() then
             local success, message = old_AddNewGem(self, gem_name)
@@ -332,7 +460,7 @@ AddComponentPostInit("hh_equip", function(self, inst)
                     local level_data = EnsureGemLevelData(self)
                     level_data[new_len] = 1
 
-                    local owner = GetEquippedOwner(self)
+                    local owner = not is_loading and GetEquippedOwner(self) or nil
                     if owner ~= nil then
                         ApplyEquipLevelDelta(self, owner, gem_name, 1, true)
                         RefreshOwnerAfterGemChange(owner)
@@ -340,6 +468,10 @@ AddComponentPostInit("hh_equip", function(self, inst)
                 end
             end
             return success, message
+        end
+
+        if is_loading then
+            return false, "旧存档恢复时跳过超出凹槽的宝石"
         end
 
         local upgrade_index = self:FindUpgradeableGemIndex(gem_name)
@@ -408,13 +540,20 @@ AddComponentPostInit("hh_equip", function(self, inst)
     end
 
     self.OnSave = function(self)
-        local data = old_OnSave(self)
+        local data = old_OnSave ~= nil and old_OnSave(self) or {}
+        if type(data) ~= "table" then
+            data = {}
+        end
         data[KEY_GEM_LEVEL_DATA] = ShallowCopy(EnsureGemLevelData(self))
         return data
     end
 
     self.OnLoad = function(self, data)
-        old_OnLoad(self, data)
+        self[KEY_LOADING_GEMS] = true
+        if old_OnLoad ~= nil then
+            old_OnLoad(self, data)
+        end
+        self[KEY_LOADING_GEMS] = nil
         local level_data = type(data) == "table" and data[KEY_GEM_LEVEL_DATA] or nil
         if type(level_data) == "table" then
             self[KEY_GEM_LEVEL_DATA] = ShallowCopy(level_data)
@@ -423,7 +562,10 @@ AddComponentPostInit("hh_equip", function(self, inst)
     end
 
     self.GetGemDebugList = function(self)
-        local result = old_GetGemDebugList(self)
+        local result = old_GetGemDebugList ~= nil and old_GetGemDebugList(self) or {}
+        if type(result) ~= "table" then
+            result = {}
+        end
         local level_data = EnsureGemLevelData(self)
         for i, info in ipairs(result) do
             local level = level_data[i] or 1
@@ -436,7 +578,9 @@ AddComponentPostInit("hh_equip", function(self, inst)
     end
 
     self.HandleEquipBuffToPlayer = function(self, player, equip_bool)
-        old_HandleEquipBuffToPlayer(self, player, equip_bool)
+        if old_HandleEquipBuffToPlayer ~= nil then
+            old_HandleEquipBuffToPlayer(self, player, equip_bool)
+        end
 
         local gems_list = GetGemsList(self)
         local level_data = EnsureGemLevelData(self)
@@ -446,7 +590,6 @@ AddComponentPostInit("hh_equip", function(self, inst)
                 ApplyEquipLevelDelta(self, player, gem_name, level - 1, equip_bool)
             end
         end
-        RefreshOwnerAfterGemChange(player)
     end
 end)
 
@@ -454,6 +597,7 @@ AddComponentPostInit("hh_player", function(self, inst)
     local old_AddEquipGems = self.AddEquipGems
     local old_HasItemsByKey = self.HasItemsByKey
     local old_RemoveItemsByKey = self.RemoveItemsByKey
+    local old_EquipEffectInherit = self.EquipEffectInherit
 
     function self:ConvertGemByName(gem_name)
         if type(gem_name) ~= "string" or gem_name == "" then
@@ -464,11 +608,14 @@ AddComponentPostInit("hh_player", function(self, inst)
         end
 
         local gem_data = GetGemData(gem_name)
-        if not IsConvertibleGem(gem_name, gem_data) then
+        local is_treasure_gem = IsTreasureConvertibleGem(gem_name)
+        if not is_treasure_gem and not IsConvertibleGem(gem_name, gem_data) then
             return false, "该宝石不能转换"
         end
 
-        local convert_pool = GetConvertibleGemPool(gem_name)
+        local convert_pool = is_treasure_gem
+            and GetTreasureConvertibleGemPool(gem_name)
+            or GetConvertibleGemPool(gem_name)
         if #convert_pool <= 0 then
             return false, "当前没有可转换的目标宝石"
         end
@@ -568,5 +715,28 @@ AddComponentPostInit("hh_player", function(self, inst)
         end
 
         return old_RemoveItemsByKey(self, item_key, num)
+    end
+
+    self.EquipEffectInherit = function(self, ...)
+        if old_EquipEffectInherit == nil
+            or self.forge_container == nil
+            or self.forge_container.components == nil
+            or self.forge_container.components.container == nil
+        then
+            return old_EquipEffectInherit ~= nil and old_EquipEffectInherit(self, ...) or false, "未找到继承容器"
+        end
+
+        local container = self.forge_container.components.container
+        local source_item = container:GetItemInSlot(0x2)
+        local target_item = container:GetItemInSlot(0x3)
+        local source_cmp = source_item ~= nil and source_item.components ~= nil and source_item.components.hh_equip or nil
+        local target_cmp = target_item ~= nil and target_item.components ~= nil and target_item.components.hh_equip or nil
+        local source_snapshot = BuildGemLevelSnapshot(source_cmp)
+
+        local success, message = old_EquipEffectInherit(self, ...)
+        if success and source_snapshot ~= nil and target_cmp ~= nil then
+            CopyGemLevelsForInheritedEquip(source_snapshot, target_cmp)
+        end
+        return success, message
     end
 end)

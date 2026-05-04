@@ -51,11 +51,16 @@ GLOBAL.EnableMonsterFlameConeSkill = GetModConfigData("enable_monster_flame_cone
 GLOBAL.EnableMonsterTwinLaserSkill = GetModConfigData("enable_monster_twin_laser_skill") ~= false
 GLOBAL.EnableMonsterTwinDashSkill = GetModConfigData("enable_monster_twin_dash_skill") ~= false
 GLOBAL.EnableMonsterTwinHellfireSkill = GetModConfigData("enable_monster_twin_hellfire_skill") ~= false
+GLOBAL.EnableMonsterSkillStatusDisplay = GetModConfigData("enable_monster_skill_status_display") ~= false
+GLOBAL.EnableLogArmorRepair = GetModConfigData("enable_log_armor_repair") ~= false
 
 
 if GLOBAL.UnknownTagEnabled then
     print("附魔补丁已激活")
     modimport("postinit/fumo.lua")     --配方
+    if GLOBAL.EnableLogArmorRepair then
+        modimport("postinit/log_armor_repair.lua")
+    end
 end
 
 
@@ -96,7 +101,6 @@ end
 
 if GLOBAL.UnknownTagEnabled then
     modimport("postinit/stride_bead_patch.lua")
-    modimport("postinit/medium_speed_enchant.lua")
     if GLOBAL.EnableMediumHasteEnchantStone then
         modimport("postinit/medium_haste_enchant.lua")
     end
@@ -149,6 +153,7 @@ GLOBAL.EnableLongRangeEnchantRestriction = GetModConfigData("enable_long_range_e
 if GLOBAL.UnknownTagEnabled then
     modimport("postinit/suppress_effect.lua")
     modimport("postinit/effect_caps.lua")
+    modimport("postinit/drop_eligibility.lua")
     if GLOBAL.EnableLongRangeEnchantRestriction then
         modimport("postinit/enchant_restrictions.lua")
     end
